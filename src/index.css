@@ -1,0 +1,68 @@
+/* frontend/src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  body {
+    @apply antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  * {
+    @apply m-0 p-0 box-border;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+}
+
+/* Custom components */
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300;
+  }
+
+  .input-primary {
+    @apply w-full px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500;
+  }
+}
+
+/* Custom utilities */
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent;
+  }
+
+  .shadow-glow {
+    @apply shadow-lg shadow-red-500/30;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
