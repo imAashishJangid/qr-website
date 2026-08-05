@@ -1,6 +1,6 @@
 // frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../lib/api';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -16,7 +16,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('adminToken'));
+  const [token, setToken] = useState(localStorage.getItem('vendorToken'));
 
   useEffect(() => {
     if (token) {
@@ -28,13 +28,13 @@ export const AuthProvider = ({ children }) => {
 
   const verifyToken = async () => {
     try {
-      const response = await axios.get('/api/admin/verify', {
+      const response = await axios.get('/api/vendor/verify', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(response.data.user);
     } catch (error) {
       console.error('Token verification failed:', error);
-      localStorage.removeItem('adminToken');
+      localStorage.removeItem('vendorToken');
       setToken(null);
       setUser(null);
     } finally {
@@ -44,13 +44,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/admin/login', { email, password });
+      const response = await axios.post('/api/vendor/login', { email, password });
       const { token, user } = response.data;
-      
-      localStorage.setItem('adminToken', token);
+
+      localStorage.setItem('vendorToken', token);
       setToken(token);
       setUser(user);
-      toast.success('Welcome Admin! 🎉');
+      toast.success(`Welcome back, ${user.name}! 🎉`);
       return { success: true };
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
@@ -58,8 +58,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const signup = async ({ name, email, password, restaurantName }) => {
+    try {
+      const response = await axios.post('/api/vendor/signup', { name, email, password, restaurantName });
+      const { token, user } = response.data;
+
+      localStorage.setItem('vendorToken', token);
+      setToken(token);
+      setUser(user);
+      toast.success(`Welcome, ${user.name}! Your vendor account is ready 🎉`);
+      return { success: true };
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Signup failed');
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
   const logout = () => {
-    localStorage.removeItem('adminToken');
+    localStorage.removeItem('vendorToken');
     setToken(null);
     setUser(null);
     toast.success('Logged out successfully');
@@ -70,6 +86,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     token,
     login,
+    signup,
     logout,
     isAuthenticated: !!user && !!token
   };

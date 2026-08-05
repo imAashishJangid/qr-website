@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import axios from '../../lib/api';
 import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import { 
@@ -18,36 +18,110 @@ import {
   FaFire,
   FaArrowLeft,
   FaArrowRight,
-  FaSpinner
+  FaSpinner,
+  FaReceipt
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import QuickOrderModal from '../../components/QuickOrderModal';
 
 const MenuPage = () => {
-  const { tableId } = useParams();
+  const { vendorId, tableId } = useParams();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { addToCart, getTotalItems, cart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [quantities, setQuantities] = useState({});
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [quickOrderItem, setQuickOrderItem] = useState(null);
   const categoriesRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  // Debounce search term before hitting the search API
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(searchTerm.trim()), 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (showSearch) {
+      searchInputRef.current?.focus();
+    }
+  }, [showSearch]);
+
+  useEffect(() => {
+    if (vendorId) {
+      localStorage.setItem('vendorId', vendorId);
+    }
+    if (tableId) {
+      localStorage.setItem('tableId', tableId);
+    }
+  }, [vendorId, tableId]);
 
   // Fetch menu items
   const { data: menuData, isLoading, error } = useQuery({
-    queryKey: ['menu', tableId],
+    queryKey: ['menu', vendorId, tableId],
+    enabled: !!vendorId,
     queryFn: async () => {
-      const { data } = await axios.get(`/api/menu/${tableId}`);
+      const { data } = await axios.get(`/api/menu/${vendorId}/${tableId}`);
       return data;
     },
   });
 
   // Fetch categories
   const { data: categories } = useQuery({
-    queryKey: ['categories', tableId],
+    queryKey: ['categories', vendorId],
+    enabled: !!vendorId,
     queryFn: async () => {
-      const { data } = await axios.get(`/api/menu/categories/${tableId}`);
+      const { data } = await axios.get(`/api/menu/${vendorId}/categories`);
+      return data;
+    },
+  });
+
+  // Ask the backend for this table's active order — works even if localStorage
+  // was cleared or the customer reopened the QR link on another device.
+  const { data: activeOrder, isSuccess: activeOrderLoaded } = useQuery({
+    queryKey: ['active-order', vendorId, tableId],
+    enabled: !!vendorId && !!tableId,
+    queryFn: async () => {
+      const { data } = await axios.get(`/api/orders/active/${vendorId}/${tableId}`);
+      return data.order;
+    },
+  });
+
+  // Keep localStorage in sync with the server's view once it's known (self-heals
+  // a stale id, e.g. if the order was completed from another device/tab).
+  useEffect(() => {
+    if (!activeOrderLoaded) return;
+    if (activeOrder?._id) {
+      localStorage.setItem('lastOrderId', activeOrder._id);
+    } else {
+      localStorage.removeItem('lastOrderId');
+    }
+  }, [activeOrderLoaded, activeOrder]);
+
+  // Show the localStorage guess instantly, then trust the server once it responds.
+  const lastOrderId = activeOrderLoaded ? activeOrder?._id : localStorage.getItem('lastOrderId');
+
+  const hasActiveFilters = !!debouncedSearch || selectedCategory !== 'all' || !!priceRange.min || !!priceRange.max;
+
+  // Server-side search/filter (name, description, category, price range)
+  const { data: searchResults, isFetching: isSearching } = useQuery({
+    queryKey: ['menu-search', vendorId, debouncedSearch, selectedCategory, priceRange.min, priceRange.max],
+    enabled: !!vendorId && hasActiveFilters,
+    keepPreviousData: true,
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.set('q', debouncedSearch);
+      if (selectedCategory !== 'all') params.set('category', selectedCategory);
+      if (priceRange.min) params.set('minPrice', priceRange.min);
+      if (priceRange.max) params.set('maxPrice', priceRange.max);
+      const { data } = await axios.get(`/api/menu/${vendorId}/search?${params.toString()}`);
       return data;
     },
   });
@@ -87,12 +161,20 @@ const MenuPage = () => {
     }
   };
 
-  const filteredItems = menuData?.items?.filter(item => {
-    const matchesCategory = selectedCategory === 'all' || item.categoryId === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredItems = hasActiveFilters ? searchResults : menuData?.items;
+
+  const applyPricePreset = (min, max) => {
+    setPriceRange({ min: min ?? '', max: max ?? '' });
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDebouncedSearch('');
+    setPriceRange({ min: '', max: '' });
+    setSelectedCategory('all');
+  };
+
+  const activeFilterCount = (priceRange.min || priceRange.max ? 1 : 0) + (selectedCategory !== 'all' ? 1 : 0);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -105,7 +187,7 @@ const MenuPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-x-hidden">
       
       {/* Enhanced Header */}
-      <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border-b border-gray-100 dark:border-gray-700">
+      <header className="safe-top sticky top-0 z-50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border-b border-gray-100 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             {/* Logo Section */}
@@ -130,6 +212,37 @@ const MenuPage = () => {
 
             {/* Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Search Toggle */}
+              <button
+                onClick={() => setShowSearch((prev) => !prev)}
+                className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
+                  showSearch
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
+                }`}
+                aria-label="Toggle search"
+              >
+                <FaSearch className="text-base sm:text-xl" />
+              </button>
+
+              {/* Filter Toggle */}
+              <button
+                onClick={() => setShowFilters((prev) => !prev)}
+                className={`relative p-2 rounded-full transition-all duration-300 hover:scale-110 ${
+                  showFilters
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
+                }`}
+                aria-label="Toggle filters"
+              >
+                <FaFilter className="text-base sm:text-xl" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110"
@@ -141,7 +254,25 @@ const MenuPage = () => {
                   <FaMoon className="text-gray-700 text-base sm:text-xl" />
                 )}
               </button>
-              
+
+              {/* Track Order Button — only shown when there's an order in flight */}
+              {lastOrderId && (
+                <button
+                  onClick={() => navigate(`/order-status/${lastOrderId}`)}
+                  className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110"
+                  aria-label="Track your order"
+                  title="Track your order"
+                >
+                  <FaReceipt className="text-xl sm:text-2xl text-gray-700 dark:text-white" />
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [1, 1.4, 1] }}
+                    transition={{ repeat: Infinity, duration: 1.6 }}
+                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 shadow"
+                  />
+                </button>
+              )}
+
               {/* Enhanced Cart Button */}
               <button
                 onClick={() => navigate('/cart')}
@@ -164,33 +295,108 @@ const MenuPage = () => {
             </div>
           </div>
 
-          {/* Enhanced Search Bar */}
-          <div className="mt-3 relative">
-            <div className="relative group">
-              <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm group-hover:text-red-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Search for delicious food..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-11 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-700/80 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 backdrop-blur-sm"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+          {/* Collapsible Search Bar */}
+          <AnimatePresence>
+            {showSearch && (
+              <motion.div
+                initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="overflow-hidden"
+              >
+                <div className="relative group">
+                  <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm group-hover:text-red-500 transition-colors" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search for delicious food..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-11 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-700/80 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 backdrop-blur-sm"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-      {/* Enhanced Categories with Scroll */}
-      <div className="sticky top-[120px] sm:top-[140px] z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 relative">
+          {/* Collapsible Price Filter Panel */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="overflow-hidden"
+              >
+                <div className="p-3 sm:p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-700/80 backdrop-blur-sm">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Price Range</p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Min ₹"
+                      value={priceRange.min}
+                      onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                    <span className="text-gray-400 text-sm">to</span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Max ₹"
+                      value={priceRange.max}
+                      onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'Under ₹100', min: '', max: '100' },
+                      { label: '₹100 - ₹300', min: '100', max: '300' },
+                      { label: '₹300 - ₹500', min: '300', max: '500' },
+                      { label: 'Above ₹500', min: '500', max: '' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        onClick={() => applyPricePreset(preset.min, preset.max)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-full border-2 transition-all ${
+                          priceRange.min === preset.min && priceRange.max === preset.max
+                            ? 'bg-red-500 border-red-500 text-white'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-red-500'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                    {(priceRange.min || priceRange.max || selectedCategory !== 'all' || searchTerm) && (
+                      <button
+                        onClick={clearFilters}
+                        className="px-3 py-1.5 text-xs font-medium rounded-full border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-300 hover:border-red-500 hover:text-red-500 transition-all"
+                      >
+                        Clear All ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Enhanced Categories with Scroll — lives inside the same sticky header so it
+            never gaps/overlaps as the collapsible search & filter panels change height */}
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-t border-gray-100 dark:border-gray-700">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 relative">
           <div className="relative flex items-center">
             {/* Left Scroll Button */}
             <button
@@ -245,7 +451,8 @@ const MenuPage = () => {
             </button>
           </div>
         </div>
-      </div>
+        </div>
+      </header>
 
       {/* Menu Grid */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
@@ -294,14 +501,21 @@ const MenuPage = () => {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Showing <span className="font-semibold text-gray-700 dark:text-gray-300">{filteredItems?.length}</span> items
               </p>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <FaFilter /> Filtered
-              </div>
+              {(hasActiveFilters || isSearching) && (
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  {isSearching ? (
+                    <FaSpinner className="animate-spin" />
+                  ) : (
+                    <FaFilter />
+                  )}
+                  {isSearching ? 'Searching...' : 'Filtered'}
+                </div>
+              )}
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-              <AnimatePresence mode="wait">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+              <AnimatePresence>
                 {filteredItems?.map((item, index) => (
                   <motion.div
                     key={item._id}
@@ -319,12 +533,12 @@ const MenuPage = () => {
                     {/* Image Container */}
                     <div className="relative w-full pt-[75%] sm:pt-[66.67%] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
                       <img
-                        src={item.image || 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Food'}
+                        src={item.image || 'https://placehold.co/400x300/FF6B6B/FFFFFF?text=Food'}
                         alt={item.name}
                         className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         loading="lazy"
                         onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/400x300/FF6B6B/FFFFFF?text=Food';
+                          e.target.src = 'https://placehold.co/400x300/FF6B6B/FFFFFF?text=Food';
                         }}
                       />
                       {/* Gradient Overlay */}
@@ -450,6 +664,15 @@ const MenuPage = () => {
                           'Select quantity'
                         )}
                       </motion.button>
+
+                      {/* Order Now Button */}
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setQuickOrderItem(item)}
+                        className="w-full mt-2 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-xl border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300"
+                      >
+                        Order Now
+                      </motion.button>
                     </div>
                   </motion.div>
                 ))}
@@ -458,6 +681,15 @@ const MenuPage = () => {
           </>
         )}
       </div>
+
+      {quickOrderItem && (
+        <QuickOrderModal
+          item={quickOrderItem}
+          vendorId={vendorId}
+          tableId={tableId}
+          onClose={() => setQuickOrderItem(null)}
+        />
+      )}
 
       {/* Scroll to Top Button */}
       <AnimatePresence>
@@ -479,7 +711,7 @@ const MenuPage = () => {
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-40 sm:hidden"
+          className="safe-bottom fixed bottom-20 left-1/2 transform -translate-x-1/2 z-40 sm:hidden"
         >
           <button
             onClick={() => navigate('/cart')}

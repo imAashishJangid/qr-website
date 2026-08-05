@@ -1,5 +1,5 @@
 // frontend/src/App.jsx
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import './index.css'; // ✅ Import CSS here
@@ -11,13 +11,20 @@ import { CartProvider } from './context/CartContext';
 import { SocketProvider } from './context/SocketContext';
 import { AuthProvider } from './context/AuthContext';
 
+import AndroidBackButton from './components/AndroidBackButton';
+import LandingPage from './pages/customer/LandingPage';
+
 // Pages
 import MenuPage from "./pages/customer/MenuPage";
 import CartPage from "./pages/customer/CartPage";
 import OrderStatusPage from "./pages/customer/OrderStatusPage";
-import KitchenDashboard from "./pages/staff/KitchenDashboard";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+import VendorSignup from "./pages/vendor/VendorSignup";
+import VendorLogin from "./pages/vendor/VendorLogin";
+import VendorLayout from "./pages/vendor/VendorLayout";
+import VendorDashboard from "./pages/vendor/VendorDashboard";
+import VendorProducts from "./pages/vendor/VendorProducts";
+import VendorOrders from "./pages/vendor/VendorOrders";
+import VendorProfile from "./pages/vendor/VendorProfile";
 
 // Create Query Client
 const queryClient = new QueryClient({
@@ -37,6 +44,7 @@ function App() {
           <SocketProvider>
             <AuthProvider>
               <Router>
+                <AndroidBackButton />
                 {/* Toast Notifications */}
                 <Toaster
                   position="top-right"
@@ -65,17 +73,22 @@ function App() {
                 
                 <Routes>
                   {/* Customer Routes */}
-                  <Route path="/" element={<MenuPage />} />
-                  <Route path="/menu/:tableId" element={<MenuPage />} />
+                  <Route path="/menu/:vendorId/:tableId" element={<MenuPage />} />
                   <Route path="/cart" element={<CartPage />} />
-                  <Route path="/order-status" element={<OrderStatusPage />} />
+                  <Route path="/order-status/:orderId" element={<OrderStatusPage />} />
 
-                  {/* Staff Routes */}
-                  <Route path="/kitchen" element={<KitchenDashboard />} />
+                  {/* Vendor Routes */}
+                  <Route path="/vendor/signup" element={<VendorSignup />} />
+                  <Route path="/vendor/login" element={<VendorLogin />} />
+                  <Route path="/vendor" element={<VendorLayout />}>
+                    <Route index element={<Navigate to="/vendor/dashboard" replace />} />
+                    <Route path="dashboard" element={<VendorDashboard />} />
+                    <Route path="products" element={<VendorProducts />} />
+                    <Route path="orders" element={<VendorOrders />} />
+                    <Route path="profile" element={<VendorProfile />} />
+                  </Route>
 
-                  {/* Admin Routes */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/" element={<LandingPage />} />
                 </Routes>
               </Router>
             </AuthProvider>

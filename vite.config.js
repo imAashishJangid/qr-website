@@ -8,8 +8,13 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:8087',
         changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:8087',
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

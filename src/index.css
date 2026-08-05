@@ -5,13 +5,26 @@
 
 /* Custom base styles */
 @layer base {
-  body {
+  html, body {
     @apply antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+    overflow-x: hidden;
   }
 
   * {
     @apply m-0 p-0 box-border;
+  }
+
+  /* Safe-area padding for notches / status bar when running inside the Capacitor app */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   /* Custom scrollbar */

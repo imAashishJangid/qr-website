@@ -1,45 +1,33 @@
-// frontend/src/pages/admin/AdminLogin.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import { FaUser, FaLock, FaSpinner } from 'react-icons/fa';
-import toast from 'react-hot-toast';
 
-const AdminLogin = () => {
+const VendorLogin = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
 
-  // ✅ Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/admin/dashboard');
+      navigate('/vendor/dashboard');
     }
   }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     const result = await login(formData.email, formData.password);
-    
     if (result.success) {
-      navigate('/admin/dashboard');
+      navigate('/vendor/dashboard');
     }
-    
     setLoading(false);
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
@@ -47,14 +35,14 @@ const AdminLogin = () => {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full"
       >
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-display font-bold text-gray-800 dark:text-white">
-            Admin Login
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-800 dark:text-white">
+            Vendor Login
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Enter your credentials to access dashboard
+            Sign in to manage your restaurant
           </p>
         </div>
 
@@ -71,7 +59,7 @@ const AdminLogin = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="admin@example.com"
+                placeholder="you@restaurant.com"
                 required
               />
             </div>
@@ -100,16 +88,19 @@ const AdminLogin = () => {
             disabled={loading}
             className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
-              <FaSpinner className="animate-spin mx-auto" />
-            ) : (
-              'Login to Dashboard'
-            )}
+            {loading ? <FaSpinner className="animate-spin mx-auto" /> : 'Login to Dashboard'}
           </button>
         </form>
+
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
+          New vendor?{' '}
+          <Link to="/vendor/signup" className="text-red-500 font-semibold hover:underline">
+            Create an account
+          </Link>
+        </p>
       </motion.div>
     </div>
   );
 };
 
-export default AdminLogin;
+export default VendorLogin;

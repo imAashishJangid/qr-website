@@ -1,0 +1,8 @@
+{
+  "appId": "com.qrmenu.app",
+  "appName": "Smart QR Menu",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

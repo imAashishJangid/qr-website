@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../context/CartContext';
-import { useSocket } from '../../context/SocketContext';
-import axios from 'axios';
+import axios from '../../lib/api';
 import { FaTrash, FaArrowLeft, FaCreditCard, FaRupeeSign } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import Confetti from 'react-confetti';
@@ -13,7 +12,6 @@ import Confetti from 'react-confetti';
 const CartPage = () => {
   const navigate = useNavigate();
   const { items, removeFromCart, updateQuantity, getTotal, clearCart } = useCart();
-  const { socket } = useSocket();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [orderDetails, setOrderDetails] = useState(null);
@@ -28,6 +26,7 @@ const CartPage = () => {
     setIsPlacingOrder(true);
     try {
       const orderData = {
+        vendorId: localStorage.getItem('vendorId'),
         tableId: localStorage.getItem('tableId'),
         items: items.map(item => ({
           menuItemId: item._id,
@@ -40,14 +39,8 @@ const CartPage = () => {
       };
 
       const { data } = await axios.post('/api/orders', orderData);
-      
-      // Emit new order via socket
-      socket.emit('new-order', {
-        orderId: data.order._id,
-        restaurantId: data.order.restaurantId,
-        tableNumber: data.order.tableNumber,
-      });
 
+      localStorage.setItem('lastOrderId', data.order._id);
       setOrderDetails(data.order);
       setShowSuccess(true);
       clearCart();
@@ -75,15 +68,20 @@ const CartPage = () => {
         />
       )}
 
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
-        <div className="max-w-4xl mx-auto px-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-6 sm:py-8">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            
-            <h1 className="text-3xl font-display font-bold text-gray-800 dark:text-white">
+          <div className="flex items-center gap-3 mb-6 sm:mb-8">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all text-gray-700 dark:text-white flex-shrink-0"
+              aria-label="Go back"
+            >
+              <FaArrowLeft />
+            </button>
+            <h1 className="text-xl sm:text-3xl font-display font-bold text-gray-800 dark:text-white">
               Your Cart
             </h1>
-            <div className="w-24" />
           </div>
 
           {items.length === 0 ? (
@@ -107,9 +105,9 @@ const CartPage = () => {
               </button>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
               {/* Cart Items */}
-              <div className="lg:col-span-2 space-y-4">
+              <div className="lg:col-span-2 space-y-3 sm:space-y-4">
                 <AnimatePresence>
                   {items.map((item) => (
                     <motion.div
@@ -117,44 +115,56 @@ const CartPage = () => {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
-                      className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-md flex items-center gap-4"
+                      className="bg-white dark:bg-gray-800 rounded-2xl p-3 sm:p-4 shadow-md flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
                     >
-                      <img
-                        src={item.image || 'https://via.placeholder.com/80'}
-                        alt={item.name}
-                        className="w-20 h-20 rounded-xl object-cover"
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-800 dark:text-white">
-                          {item.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          ₹{item.price} each
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 sm:gap-4 sm:flex-1 min-w-0">
+                        <img
+                          src={item.image || 'https://placehold.co/80'}
+                          alt={item.name}
+                          className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl object-cover flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-white truncate">
+                            {item.name}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                            ₹{item.price} each
+                          </p>
+                        </div>
                         <button
-                          onClick={() => updateQuantity(item._id, -1)}
-                          className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-100 dark:hover:bg-red-900 transition-colors"
+                          onClick={() => removeFromCart(item._id)}
+                          className="sm:hidden text-red-500 hover:text-red-700 transition-colors p-2 flex-shrink-0"
+                          aria-label="Remove item"
                         >
-                          -
-                        </button>
-                        <span className="w-8 text-center font-semibold text-gray-800 dark:text-white">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item._id, 1)}
-                          className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-100 dark:hover:bg-red-900 transition-colors"
-                        >
-                          +
+                          <FaTrash />
                         </button>
                       </div>
-                      <button
-                        onClick={() => removeFromCart(item._id)}
-                        className="text-red-500 hover:text-red-700 transition-colors p-2"
-                      >
-                        <FaTrash />
-                      </button>
+                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <button
+                            onClick={() => updateQuantity(item._id, -1)}
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-sm sm:text-base"
+                          >
+                            -
+                          </button>
+                          <span className="w-6 sm:w-8 text-center font-semibold text-sm sm:text-base text-gray-800 dark:text-white">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item._id, 1)}
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-100 dark:hover:bg-red-900 transition-colors text-sm sm:text-base"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => removeFromCart(item._id)}
+                          className="hidden sm:inline-flex text-red-500 hover:text-red-700 transition-colors p-2 flex-shrink-0"
+                          aria-label="Remove item"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -164,9 +174,9 @@ const CartPage = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md h-fit sticky top-24"
+                className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 shadow-md h-fit lg:sticky lg:top-24"
               >
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white mb-4">
                   Order Summary
                 </h2>
                 

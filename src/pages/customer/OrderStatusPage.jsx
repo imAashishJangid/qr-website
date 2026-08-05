@@ -1,45 +1,59 @@
 // frontend/src/pages/customer/OrderStatusPage.jsx
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useSocket } from '../../context/SocketContext';
 import { useCart } from '../../context/CartContext';
+import api from '../../lib/api';
 import { FaCheckCircle, FaClock, FaUtensils, FaSpinner, FaHome } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
 const OrderStatusPage = () => {
   const navigate = useNavigate();
+  const { orderId } = useParams();
   const { socket } = useSocket();
   const { clearCart } = useCart();
   const [orderStatus, setOrderStatus] = useState('pending');
   const [orderDetails, setOrderDetails] = useState(null);
   const [estimatedTime, setEstimatedTime] = useState(15);
 
+  // Fetch the order from the backend on load
   useEffect(() => {
-    if (!socket) {
-      console.warn('Socket not connected yet');
-      return;
-    }
+    if (!orderId) return;
 
-    const savedOrder = localStorage.getItem('currentOrder');
-    if (savedOrder) {
-      const order = JSON.parse(savedOrder);
-      setOrderDetails(order);
-      setOrderStatus(order.status || 'pending');
-    }
+    api.get(`/api/orders/${orderId}`)
+      .then(({ data }) => {
+        setOrderDetails(data);
+        setOrderStatus(data.status || 'pending');
+        setEstimatedTime(data.estimatedTime || 15);
+      })
+      .catch(() => {
+        toast.error('Could not load this order');
+      });
+  }, [orderId]);
+
+  // Join the order's room and listen for live status updates
+  useEffect(() => {
+    if (!socket || !orderId) return;
+
+    socket.emit('join-order', orderId);
 
     const handleStatusUpdate = (data) => {
       setOrderStatus(data.status);
       setEstimatedTime(data.estimatedTime || 15);
-      
+
+      if (data.status === 'preparing') {
+        toast.success('👨‍🍳 Order received! Preparing your food.');
+      }
+
       if (data.status === 'ready') {
         toast.success('🎉 Your order is ready for pickup!');
       }
-      
+
       if (data.status === 'completed') {
         toast.success('✅ Order completed! Thank you for dining with us.');
         clearCart();
-        localStorage.removeItem('currentOrder');
+        localStorage.removeItem('lastOrderId');
       }
     };
 
@@ -48,7 +62,7 @@ const OrderStatusPage = () => {
     return () => {
       socket.off('orderStatusUpdate', handleStatusUpdate);
     };
-  }, [socket, clearCart]);
+  }, [socket, orderId, clearCart]);
 
   const getStatusIcon = () => {
     switch (orderStatus) {
@@ -105,6 +119,13 @@ const OrderStatusPage = () => {
     return steps[orderStatus] || 0;
   };
 
+  // Route "Home" back to the menu the customer scanned into, not the generic landing page
+  const backToMenu = () => {
+    const vendorId = localStorage.getItem('vendorId');
+    const tableId = localStorage.getItem('tableId');
+    navigate(vendorId && tableId ? `/menu/${vendorId}/${tableId}` : '/');
+  };
+
   if (!orderDetails) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
@@ -130,7 +151,7 @@ const OrderStatusPage = () => {
             Order Status
           </h1>
           <button
-            onClick={() => navigate('/')}
+            onClick={backToMenu}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-md hover:shadow-lg transition-all text-gray-700 dark:text-white text-sm sm:text-base"
           >
             <FaHome /> Home
@@ -235,8 +256,8 @@ const OrderStatusPage = () => {
             onClick={() => {
               toast.success('Thank you for dining with us! 🍽️');
               clearCart();
-              localStorage.removeItem('currentOrder');
-              navigate('/');
+              localStorage.removeItem('lastOrderId');
+              backToMenu();
             }}
           >
             ✅ Collect Order
