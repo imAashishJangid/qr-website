@@ -4,8 +4,10 @@ import {
   login,
   verify,
   changePassword,
+  updateProfile,
   getStats,
   getRecentOrders,
+  getRevenueSummary,
   listTables,
   addTable,
 } from '../controllers/vendorController.js';
@@ -17,8 +19,10 @@ router.post('/signup', signup);
 router.post('/login', login);
 router.get('/verify', protect, verify);
 router.put('/change-password', protect, changePassword);
+router.put('/profile', protect, updateProfile);
 router.get('/stats', protect, getStats);
 router.get('/recent-orders', protect, getRecentOrders);
+router.get('/revenue', protect, getRevenueSummary);
 router.get('/tables', protect, listTables);
 router.post('/tables', protect, addTable);
 
