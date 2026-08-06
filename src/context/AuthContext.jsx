@@ -81,6 +81,10 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   };
 
+  const updateUser = (patch) => {
+    setUser((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
   const value = {
     user,
     loading,
@@ -88,6 +92,7 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
+    updateUser,
     isAuthenticated: !!user && !!token
   };
 

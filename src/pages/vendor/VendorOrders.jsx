@@ -124,25 +124,30 @@ const VendorOrders = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {['pending', 'preparing', 'ready', 'all'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setSelectedTab(tab)}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
-                selectedTab === tab
-                  ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              {tab !== 'all' && (
-                <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-xs">
-                  {orders.filter((o) => o.status === tab).length}
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-1.5">
+          {['pending', 'preparing', 'ready', 'all'].map((tab) => {
+            const count = tab === 'all' ? orders.length : orders.filter((o) => o.status === tab).length;
+            return (
+              <button
+                key={tab}
+                onClick={() => setSelectedTab(tab)}
+                className={`flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  selectedTab === tab
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span className="capitalize truncate">{tab}</span>
+                <span
+                  className={`text-[10px] sm:text-xs px-1.5 rounded-full flex-shrink-0 ${
+                    selectedTab === tab ? 'bg-white/20' : 'bg-gray-100 dark:bg-gray-700'
+                  }`}
+                >
+                  {count}
                 </span>
-              )}
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -165,14 +170,16 @@ const VendorOrders = () => {
                   className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all overflow-hidden"
                 >
                   <div className={`p-4 ${getStatusColor(order.status)} bg-opacity-10`}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">Order #{order.orderNumber}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Table {order.tableId}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="inline-block text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white bg-white/70 dark:bg-black/20 px-2.5 py-0.5 rounded-lg">
+                          Table {order.tableId}
+                        </span>
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">#{order.orderNumber}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
                         {getStatusIcon(order.status)}
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{order.status}</span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">{order.status}</span>
                       </div>
                     </div>
                   </div>
@@ -206,7 +213,7 @@ const VendorOrders = () => {
                         <button
                           onClick={() => updateOrderStatus(order._id, 'preparing')}
                           disabled={updating === order._id}
-                          className="flex-1 bg-blue-500 text-white py-2 rounded-xl hover:bg-blue-600 transition-colors text-sm font-semibold disabled:opacity-50"
+                          className="flex-1 bg-blue-500 text-white py-2.5 rounded-xl hover:bg-blue-600 transition-colors text-sm font-semibold disabled:opacity-50"
                         >
                           {updating === order._id ? <FaSpinner className="animate-spin mx-auto" /> : 'Receive'}
                         </button>
@@ -215,7 +222,7 @@ const VendorOrders = () => {
                         <button
                           onClick={() => updateOrderStatus(order._id, 'ready')}
                           disabled={updating === order._id}
-                          className="flex-1 bg-green-500 text-white py-2 rounded-xl hover:bg-green-600 transition-colors text-sm font-semibold disabled:opacity-50"
+                          className="flex-1 bg-green-500 text-white py-2.5 rounded-xl hover:bg-green-600 transition-colors text-sm font-semibold disabled:opacity-50"
                         >
                           {updating === order._id ? <FaSpinner className="animate-spin mx-auto" /> : 'Mark Ready'}
                         </button>
@@ -224,7 +231,7 @@ const VendorOrders = () => {
                         <button
                           onClick={() => updateOrderStatus(order._id, 'completed')}
                           disabled={updating === order._id}
-                          className="flex-1 bg-gray-500 text-white py-2 rounded-xl hover:bg-gray-600 transition-colors text-sm font-semibold disabled:opacity-50"
+                          className="flex-1 bg-gray-700 dark:bg-gray-600 text-white py-2.5 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-500 transition-colors text-sm font-semibold disabled:opacity-50"
                         >
                           {updating === order._id ? <FaSpinner className="animate-spin mx-auto" /> : 'Complete Order'}
                         </button>
