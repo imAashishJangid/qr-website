@@ -303,13 +303,6 @@ const ForgotPasswordModal = ({ onClose }) => {
               >
                 {submitting ? <FaSpinner className="animate-spin" /> : 'Update Password'}
               </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full text-sm text-gray-500 dark:text-gray-400 hover:underline"
-              >
-                Skip for now
-              </button>
             </form>
           )}
         </div>
