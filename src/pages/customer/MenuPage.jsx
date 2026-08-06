@@ -527,7 +527,7 @@ const MenuPage = () => {
                       duration: 0.4,
                       ease: "easeOut"
                     }}
-                    className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:transform hover:-translate-y-2 hover:scale-[1.01]"
+                    className="group bg-white dark:bg-gray-800 rounded-none shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-700 hover:transform hover:-translate-y-2 hover:scale-[1.01]"
                     whileHover={{ y: -4 }}
                   >
                     {/* Image Container */}
@@ -550,7 +550,7 @@ const MenuPage = () => {
                           <motion.span
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-lg flex items-center gap-1"
+                            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-none shadow-lg flex items-center gap-1"
                           >
                             <FaStar className="text-[8px] sm:text-[10px]" /> Bestseller
                           </motion.span>
@@ -560,7 +560,7 @@ const MenuPage = () => {
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.1 }}
-                            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-lg"
+                            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-none shadow-lg"
                           >
                             New
                           </motion.span>
@@ -570,11 +570,11 @@ const MenuPage = () => {
                       {/* Veg/Non-Veg Badge */}
                       <div className="absolute top-2 right-2">
                         {item.isVeg ? (
-                          <span className="bg-green-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg flex items-center gap-1">
+                          <span className="bg-green-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-none shadow-lg flex items-center gap-1">
                             <FaLeaf className="text-[10px] sm:text-xs" /> Veg
                           </span>
                         ) : (
-                          <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg">
+                          <span className="bg-red-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-none shadow-lg">
                             Non-Veg
                           </span>
                         )}
@@ -586,7 +586,7 @@ const MenuPage = () => {
                           setQuantities(prev => ({ ...prev, [item._id]: 1 }));
                           handleAddToCart(item);
                         }}
-                        className="absolute bottom-2 right-2 bg-white dark:bg-gray-800 p-1.5 sm:p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
+                        className="absolute bottom-2 right-2 bg-white dark:bg-gray-800 p-1.5 sm:p-2 rounded-none shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
                         aria-label="Quick add"
                       >
                         <FaShoppingCart className="text-red-500 text-xs sm:text-sm" />
@@ -600,7 +600,7 @@ const MenuPage = () => {
                           {item.name}
                         </h3>
                         {item.rating && (
-                          <span className="flex items-center gap-0.5 text-xs text-yellow-500 bg-yellow-50 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                          <span className="flex items-center gap-0.5 text-xs text-yellow-500 bg-yellow-50 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-none flex-shrink-0">
                             <FaStar className="text-[10px]" /> {item.rating}
                           </span>
                         )}
@@ -610,23 +610,23 @@ const MenuPage = () => {
                         {item.description || 'Delicious food item prepared with fresh ingredients'}
                       </p>
                       
-                      <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
-                        <div>
-                          <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                      <div className="mt-3 flex flex-row items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
                             ₹{item.price}
                           </span>
                           {item.originalPrice && (
-                            <span className="text-xs text-gray-400 line-through ml-2">
+                            <span className="text-xs text-gray-400 line-through ml-1 sm:ml-2">
                               ₹{item.originalPrice}
                             </span>
                           )}
                         </div>
-                        
+
                         {/* Quantity Controls */}
-                        <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-full p-1">
+                        <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-none p-1 flex-shrink-0">
                           <button
                             onClick={() => handleQuantityChange(item._id, -1)}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-all duration-300 flex items-center justify-center text-sm sm:text-base shadow-sm"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-none bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-all duration-300 flex items-center justify-center text-sm sm:text-base shadow-sm"
                             aria-label="Decrease quantity"
                           >
                             -
@@ -636,7 +636,7 @@ const MenuPage = () => {
                           </span>
                           <button
                             onClick={() => handleQuantityChange(item._id, 1)}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-all duration-300 flex items-center justify-center text-sm sm:text-base shadow-sm"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-none bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-all duration-300 flex items-center justify-center text-sm sm:text-base shadow-sm"
                             aria-label="Increase quantity"
                           >
                             +
@@ -649,7 +649,7 @@ const MenuPage = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleAddToCart(item)}
                         disabled={!quantities[item._id]}
-                        className={`w-full mt-3 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-xl transition-all duration-300 ${
+                        className={`w-full mt-3 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-none transition-all duration-300 ${
                           quantities[item._id]
                             ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02]'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
@@ -669,7 +669,7 @@ const MenuPage = () => {
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setQuickOrderItem(item)}
-                        className="w-full mt-2 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-xl border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300"
+                        className="w-full mt-2 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-none border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300"
                       >
                         Order Now
                       </motion.button>
