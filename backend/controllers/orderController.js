@@ -1,5 +1,6 @@
 import Order from '../models/Order.js';
 import MenuItem from '../models/MenuItem.js';
+import Vendor from '../models/Vendor.js';
 import { getIO } from '../socket/socket.js';
 
 const GST_RATE = 0.05;
@@ -16,6 +17,14 @@ export const createOrder = async (req, res) => {
 
     if (!vendorId || !tableId || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'vendorId, tableId and items are required' });
+    }
+
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) {
+      return res.status(404).json({ message: 'Vendor not found' });
+    }
+    if (!vendor.tables.includes(String(tableId))) {
+      return res.status(400).json({ message: 'Invalid table number for this restaurant' });
     }
 
     const resolvedItems = await Promise.all(

@@ -74,8 +74,14 @@ const VendorSignup = () => {
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder={placeholder}
                   required
+                  {...(name === 'password' ? { minLength: 6 } : {})}
                 />
               </div>
+              {name === 'password' && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Must be at least 6 characters
+                </p>
+              )}
             </div>
           ))}
 

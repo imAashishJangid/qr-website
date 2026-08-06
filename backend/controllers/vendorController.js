@@ -32,6 +32,9 @@ export const signup = async (req, res) => {
     if (!name || !email || !password || !restaurantName) {
       return res.status(400).json({ message: 'name, email, password and restaurantName are required' });
     }
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
 
     const existing = await Vendor.findOne({ email });
     if (existing) {

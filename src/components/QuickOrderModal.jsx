@@ -12,14 +12,13 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
-  const [tableNumber, setTableNumber] = useState(tableId || '');
   const [placing, setPlacing] = useState(false);
 
   const totalPrice = item.price * quantity;
 
   const handleConfirm = async () => {
-    if (!tableNumber.trim()) {
-      toast.error('Please enter your table number');
+    if (!tableId) {
+      toast.error('Table number not found. Please rescan the QR code.');
       return;
     }
 
@@ -27,7 +26,7 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
     try {
       const { data } = await axios.post('/api/orders', {
         vendorId,
-        tableId: tableNumber.trim(),
+        tableId,
         customerId: getCustomerId(),
         items: [{ menuItemId: item._id, quantity }],
         note,
@@ -104,11 +103,14 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
                 Table Number
               </label>
               <input
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                placeholder="e.g. 5"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                value={tableId || ''}
+                readOnly
+                disabled
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 cursor-not-allowed"
               />
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Detected from your table's QR code
+              </p>
             </div>
 
             <div>
