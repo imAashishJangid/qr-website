@@ -37,8 +37,7 @@ const VendorDashboard = () => {
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [tables, setTables] = useState([]);
-  const [newTable, setNewTable] = useState('');
-  const [addingTable, setAddingTable] = useState(false);
+  const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [dateFilter, setDateFilter] = useState('');
@@ -154,23 +153,6 @@ const VendorDashboard = () => {
     return `${names.slice(0, 2).join(', ')} +${names.length - 2} more`;
   };
 
-  const handleAddTable = async (e) => {
-    e.preventDefault();
-    if (!newTable.trim()) return;
-
-    setAddingTable(true);
-    try {
-      const { data } = await axios.post('/api/vendor/tables', { number: newTable.trim() });
-      setTables(data);
-      setNewTable('');
-      toast.success(`Table ${newTable.trim()} added!`);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to add table');
-    } finally {
-      setAddingTable(false);
-    }
-  };
-
   const menuLink = (table) => `${window.location.origin}/menu/${user?.id}/${table}`;
 
   const statCards = [
@@ -231,27 +213,17 @@ const VendorDashboard = () => {
           transition={{ delay: 0.3 }}
           className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6"
         >
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <FaQrcode className="text-red-500" /> Tables & QR Codes
-          </h2>
-
-          <form onSubmit={handleAddTable} className="flex flex-col sm:flex-row gap-2 mb-6">
-            <input
-              type="text"
-              value={newTable}
-              onChange={(e) => setNewTable(e.target.value)}
-              placeholder="Table number, e.g. 5"
-              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+              <FaQrcode className="text-red-500" /> Tables & QR Codes
+            </h2>
             <button
-              type="submit"
-              disabled={addingTable}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50"
+              onClick={() => setShowAddTableModal(true)}
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold text-sm sm:text-base hover:shadow-lg transition-all flex-shrink-0"
             >
-              {addingTable ? <FaSpinner className="animate-spin" /> : <FaPlus />}
-              Add Table
+              <FaPlus /> Add Table
             </button>
-          </form>
+          </div>
 
           {tables.length === 0 ? (
             <p className="text-center text-gray-500 dark:text-gray-400 py-6">
@@ -435,7 +407,87 @@ const VendorDashboard = () => {
       {selectedOrder && (
         <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       )}
+      {showAddTableModal && (
+        <AddTableModal
+          onClose={() => setShowAddTableModal(false)}
+          onAdded={(updatedTables) => {
+            setTables(updatedTables);
+            setShowAddTableModal(false);
+          }}
+        />
+      )}
     </div>
+  );
+};
+
+const AddTableModal = ({ onClose, onAdded }) => {
+  const [number, setNumber] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!number.trim()) return;
+
+    setAdding(true);
+    try {
+      const { data } = await axios.post('/api/vendor/tables', { number: number.trim() });
+      toast.success(`Table ${number.trim()} added!`);
+      onAdded(data);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to add table');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm"
+      >
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+            <FaQrcode className="text-red-500" /> Add Table
+          </h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+            <FaTimes className="text-gray-500 dark:text-gray-400" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Table Number
+            </label>
+            <input
+              type="text"
+              value={number}
+              onChange={(e) => setNumber(e.target.value)}
+              placeholder="e.g. 5"
+              autoFocus
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={adding}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
+          >
+            {adding ? <FaSpinner className="animate-spin" /> : <FaPlus />}
+            Add Table
+          </button>
+        </form>
+      </motion.div>
+    </motion.div>
   );
 };
 

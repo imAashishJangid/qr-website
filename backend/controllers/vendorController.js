@@ -1,11 +1,16 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Vendor from '../models/Vendor.js';
 import Order from '../models/Order.js';
 import MenuItem from '../models/MenuItem.js';
 import Category from '../models/Category.js';
 import cloudinary, { deleteCloudinaryImage } from '../config/cloudinary.js';
+import { sendOtpEmail } from '../config/mailer.js';
+
+const OTP_TTL_MS = 10 * 60 * 1000;
+const RESET_TOKEN_TTL_MS = 10 * 60 * 1000;
 
 const signToken = (vendor) =>
   jwt.sign({ id: vendor._id, email: vendor.email, name: vendor.name }, process.env.JWT_SECRET, {
@@ -93,6 +98,97 @@ export const changePassword = async (req, res) => {
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to change password', error: error.message });
+  }
+};
+
+// POST /api/vendor/forgot-password
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const vendor = await Vendor.findOne({ email });
+    if (!vendor) {
+      return res.status(404).json({ message: "You don't have an account with this email" });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    vendor.resetOtp = await bcrypt.hash(otp, 10);
+    vendor.resetOtpExpires = new Date(Date.now() + OTP_TTL_MS);
+    vendor.resetToken = null;
+    vendor.resetTokenExpires = null;
+    await vendor.save();
+
+    await sendOtpEmail(vendor.email, otp);
+
+    res.json({ message: 'An OTP has been sent to your email' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to send OTP', error: error.message });
+  }
+};
+
+// POST /api/vendor/verify-otp
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: 'Email and OTP are required' });
+
+    const vendor = await Vendor.findOne({ email });
+    if (!vendor) return res.status(404).json({ message: "You don't have an account with this email" });
+
+    if (!vendor.resetOtp || !vendor.resetOtpExpires || vendor.resetOtpExpires < new Date()) {
+      return res.status(400).json({ message: 'OTP expired. Please request a new one.' });
+    }
+
+    const isMatch = await bcrypt.compare(otp, vendor.resetOtp);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    vendor.resetToken = resetToken;
+    vendor.resetTokenExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+    vendor.resetOtp = null;
+    vendor.resetOtpExpires = null;
+    await vendor.save();
+
+    res.json({ message: 'OTP verified', resetToken });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to verify OTP', error: error.message });
+  }
+};
+
+// POST /api/vendor/reset-password
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, resetToken, newPassword } = req.body;
+    if (!email || !resetToken || !newPassword) {
+      return res.status(400).json({ message: 'Email, resetToken and newPassword are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const vendor = await Vendor.findOne({ email });
+    if (!vendor) return res.status(404).json({ message: "You don't have an account with this email" });
+
+    if (
+      !vendor.resetToken ||
+      !vendor.resetTokenExpires ||
+      vendor.resetTokenExpires < new Date() ||
+      vendor.resetToken !== resetToken
+    ) {
+      return res.status(400).json({ message: 'Reset session expired. Please start again.' });
+    }
+
+    vendor.password = await bcrypt.hash(newPassword, 10);
+    vendor.resetToken = null;
+    vendor.resetTokenExpires = null;
+    await vendor.save();
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to reset password', error: error.message });
   }
 };
 

@@ -4,6 +4,9 @@ import {
   login,
   verify,
   changePassword,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
   updateProfile,
   getStats,
   getRecentOrders,
@@ -19,6 +22,9 @@ router.post('/signup', signup);
 router.post('/login', login);
 router.get('/verify', protect, verify);
 router.put('/change-password', protect, changePassword);
+router.post('/forgot-password', forgotPassword);
+router.post('/verify-otp', verifyOtp);
+router.post('/reset-password', resetPassword);
 router.put('/profile', protect, updateProfile);
 router.get('/stats', protect, getStats);
 router.get('/recent-orders', protect, getRecentOrders);
