@@ -4,7 +4,7 @@ import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
 import { FaCheck, FaClock, FaUtensils, FaBell, FaSpinner, FaInbox, FaCommentDots } from 'react-icons/fa';
 import toast from 'react-hot-toast';
-import { Howl } from 'howler';
+import { playNotificationChime } from '../../lib/notificationSound';
 import axios from '../../lib/api';
 
 const VendorOrders = () => {
@@ -13,14 +13,7 @@ const VendorOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('pending');
-  const [sound, setSound] = useState(null);
   const [updating, setUpdating] = useState(null);
-
-  useEffect(() => {
-    const newOrderSound = new Howl({ src: ['/sounds/new-order.mp3'], volume: 0.5 });
-    setSound(newOrderSound);
-    return () => newOrderSound.unload();
-  }, []);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -42,7 +35,7 @@ const VendorOrders = () => {
 
     const handleNewOrder = (newOrder) => {
       setOrders((prev) => [newOrder, ...prev]);
-      if (sound) sound.play();
+      playNotificationChime();
       toast.success(`📦 New order #${newOrder.orderNumber} received!`);
       if (Notification.permission === 'granted') {
         new Notification('New Order!', { body: `Order #${newOrder.orderNumber} has been placed` });
@@ -64,7 +57,7 @@ const VendorOrders = () => {
       socket.off('newOrder', handleNewOrder);
       socket.off('orderUpdated', handleOrderUpdate);
     };
-  }, [socket, user?.id, sound]);
+  }, [socket, user?.id]);
 
   const updateOrderStatus = async (orderId, status) => {
     setUpdating(orderId);

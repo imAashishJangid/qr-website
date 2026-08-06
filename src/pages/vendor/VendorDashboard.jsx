@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useSocket } from '../../context/SocketContext';
 import { motion } from 'framer-motion';
 import {
   FaUsers,
@@ -21,9 +22,11 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import axios from '../../lib/api';
 import toast from 'react-hot-toast';
+import { playNotificationChime } from '../../lib/notificationSound';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
+  const { socket } = useSocket();
   const { theme, toggleTheme } = useTheme();
   const [stats, setStats] = useState({
     totalOrders: 0,
@@ -89,6 +92,38 @@ const VendorDashboard = () => {
     fetchRecentOrders(ordersPage, dateFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ordersPage, dateFilter]);
+
+  // Live updates: new orders and status changes land instantly, no refresh needed.
+  useEffect(() => {
+    if (!socket || !user?.id) return;
+
+    socket.emit('join-vendor', user.id);
+
+    const refreshStats = () => {
+      axios.get('/api/vendor/stats').then(({ data }) => setStats(data)).catch(() => {});
+    };
+
+    const handleNewOrder = (order) => {
+      playNotificationChime();
+      toast.success(`📦 New order #${order.orderNumber} received!`);
+      refreshStats();
+      if (ordersPage === 1) fetchRecentOrders(1, dateFilter);
+    };
+
+    const handleOrderUpdated = () => {
+      refreshStats();
+      fetchRecentOrders(ordersPage, dateFilter);
+    };
+
+    socket.on('newOrder', handleNewOrder);
+    socket.on('orderUpdated', handleOrderUpdated);
+
+    return () => {
+      socket.off('newOrder', handleNewOrder);
+      socket.off('orderUpdated', handleOrderUpdated);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, user?.id, ordersPage, dateFilter]);
 
   const handleDateFilterChange = (value) => {
     setDateFilter(value);

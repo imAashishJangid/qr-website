@@ -6,6 +6,7 @@ import { useSocket } from '../../context/SocketContext';
 import { useCart } from '../../context/CartContext';
 import api from '../../lib/api';
 import { getCustomerId } from '../../lib/customerId';
+import { playNotificationChime } from '../../lib/notificationSound';
 import { FaCheckCircle, FaClock, FaUtensils, FaSpinner, FaHome, FaReceipt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -60,6 +61,7 @@ const OrderStatusPage = () => {
     const handleStatusUpdate = (data) => {
       setOrderStatus(data.status);
       setEstimatedTime(data.estimatedTime || 15);
+      playNotificationChime();
 
       if (data.status === 'preparing') {
         toast.success('👨‍🍳 Order received! Preparing your food.');
