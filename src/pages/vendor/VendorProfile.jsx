@@ -63,7 +63,7 @@ const VendorProfile = () => {
 
   return (
     <div className="flex-1 flex flex-col">
-      <header className="safe-top sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg">
+      <header className="lg:hidden safe-top sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg">
         <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
           <h1 className="text-lg sm:text-2xl font-display font-bold text-gray-800 dark:text-white">Profile</h1>
           <button
@@ -75,11 +75,12 @@ const VendorProfile = () => {
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto w-full px-3 sm:px-4 py-5 sm:py-6 flex-1 flex flex-col gap-5 sm:gap-6">
+      <div className="max-w-3xl lg:max-w-5xl mx-auto w-full px-3 sm:px-4 py-5 sm:py-6 flex-1 flex flex-col gap-5 sm:gap-6">
+        {/* Mobile profile card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sm:p-10"
+          className="lg:hidden relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sm:p-10"
         >
           <button
             onClick={() => setShowEditModal(true)}
@@ -108,7 +109,7 @@ const VendorProfile = () => {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="lg:hidden grid grid-cols-2 gap-3 sm:gap-4">
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -146,7 +147,7 @@ const VendorProfile = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.18 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-5"
+            className="lg:hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-5"
           >
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">
               Menu Breakdown
@@ -170,12 +171,124 @@ const VendorProfile = () => {
           </motion.div>
         )}
 
+        {/* Desktop: everything unified in one full-width card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="hidden lg:block relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8"
+        >
+          <div className="absolute top-6 right-6 flex items-center gap-2">
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="flex items-center gap-1.5 text-sm font-medium text-red-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <FaPen className="text-xs" /> Edit
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-red-500 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <FaSignOutAlt className="text-xs" /> Logout
+            </button>
+          </div>
+
+          <div className="flex items-center gap-8">
+            <div className="w-44 h-44 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-white flex items-center justify-center text-5xl font-bold overflow-hidden ring-4 ring-red-50 dark:ring-gray-700 flex-shrink-0">
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                user?.name?.charAt(0)?.toUpperCase() || 'V'
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white truncate">{user?.name}</h2>
+              <p className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+                <FaStore className="flex-shrink-0 text-red-400 text-xs" /> {user?.restaurantName}
+              </p>
+              <p className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                <FaEnvelope className="flex-shrink-0 text-red-400 text-xs" /> {user?.email}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-10 mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <button
+              onClick={() => setShowRevenueModal(true)}
+              className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+            >
+              <div className="bg-green-500 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total Sell</p>
+                <p className="text-lg font-bold text-gray-800 dark:text-white">
+                  {loading ? <FaSpinner className="animate-spin" /> : `₹${stats.totalRevenue}`}
+                </p>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/vendor/products')}
+              className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+            >
+              <div className="bg-purple-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total Products</p>
+                <p className="text-lg font-bold text-gray-800 dark:text-white">
+                  {loading ? <FaSpinner className="animate-spin" /> : stats.totalProducts}
+                </p>
+              </div>
+            </button>
+            <button
+              onClick={() => navigate('/vendor/products', { state: { openAdd: true } })}
+              className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+            >
+              <div className="bg-gradient-to-r from-red-500 to-orange-500 p-3 rounded-xl text-white flex-shrink-0"><FaPlus /></div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Add</p>
+                <p className="text-lg font-bold text-gray-800 dark:text-white">Product</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+            >
+              <div className="bg-gray-700 dark:bg-gray-600 p-3 rounded-xl text-white flex-shrink-0"><FaLock /></div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Reset</p>
+                <p className="text-lg font-bold text-gray-800 dark:text-white">Password</p>
+              </div>
+            </button>
+          </div>
+
+          {!loading && stats.totalProducts > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">
+                Menu Breakdown
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <span className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                  <FaLeaf className="text-xs" /> Veg: {stats.vegCount}
+                </span>
+                <span className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                  <FaDrumstickBite className="text-xs" /> Non-Veg: {stats.nonVegCount}
+                </span>
+                {stats.categories.map((c) => (
+                  <span
+                    key={c.name}
+                    className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    <span>{c.icon}</span> {c.name}: {c.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </motion.div>
+
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           onClick={() => navigate('/vendor/products', { state: { openAdd: true } })}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all"
+          className="lg:hidden w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all"
         >
           <FaPlus /> Add Products
         </motion.button>
@@ -185,7 +298,7 @@ const VendorProfile = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
           onClick={() => setShowPasswordModal(true)}
-          className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 flex items-center justify-between"
+          className="lg:hidden w-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 flex items-center justify-between"
         >
           <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
             <FaLock className="text-red-500" /> Reset Password
@@ -195,7 +308,7 @@ const VendorProfile = () => {
 
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 border-2 border-red-500 text-red-500 font-semibold py-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all mt-auto"
+          className="lg:hidden w-full flex items-center justify-center gap-2 border-2 border-red-500 text-red-500 font-semibold py-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all mt-auto"
         >
           <FaSignOutAlt /> Logout
         </button>
@@ -338,7 +451,7 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-800 rounded-none shadow-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
       >
         <div className="sticky top-0 bg-white dark:bg-gray-800 flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">Edit Profile</h2>

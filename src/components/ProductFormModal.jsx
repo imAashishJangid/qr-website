@@ -107,7 +107,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 40, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-gray-800 rounded-none shadow-2xl w-full sm:max-w-lg lg:max-w-2xl max-h-[90vh] lg:max-h-[95vh] overflow-y-auto"
         >
           <div className="sticky top-0 bg-white dark:bg-gray-800 flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
             <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">

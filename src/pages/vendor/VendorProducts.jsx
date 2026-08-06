@@ -78,7 +78,7 @@ const VendorProducts = () => {
 
   return (
     <div>
-      <header className="safe-top sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg">
+      <header className="lg:hidden safe-top sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
           <div>
             <h1 className="text-lg sm:text-2xl font-display font-bold text-gray-800 dark:text-white">Products</h1>
@@ -94,6 +94,19 @@ const VendorProducts = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
+        <div className="hidden lg:flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-display font-bold text-gray-800 dark:text-white">Products</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{products.length} items</p>
+          </div>
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+          >
+            <FaPlus /> Add Product
+          </button>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-16">
             <FaSpinner className="text-3xl text-red-500 animate-spin" />

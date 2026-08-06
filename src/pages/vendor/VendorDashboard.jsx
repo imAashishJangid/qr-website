@@ -160,23 +160,28 @@ const VendorDashboard = () => {
   const menuLink = (table) => `${window.location.origin}/menu/${user?.id}/${table}`;
 
   const statCards = [
-    { title: 'Total Orders', value: stats.totalOrders, icon: <FaUtensils className="text-2xl" />, color: 'bg-blue-500' },
-    { title: 'Total Revenue', value: `₹${stats.totalRevenue}`, icon: <FaMoneyBillWave className="text-2xl" />, color: 'bg-green-500' },
-    { title: 'Total Products', value: stats.totalProducts, icon: <FaBoxOpen className="text-2xl" />, color: 'bg-purple-500' },
-    { title: 'Pending Orders', value: stats.pendingOrders, icon: <FaClock className="text-2xl" />, color: 'bg-yellow-500' },
+    { title: 'Total Orders', value: stats.totalOrders, icon: <FaUtensils className="text-2xl lg:text-3xl" />, color: 'bg-blue-500' },
+    { title: 'Total Revenue', value: `₹${stats.totalRevenue}`, icon: <FaMoneyBillWave className="text-2xl lg:text-3xl" />, color: 'bg-green-500' },
+    { title: 'Total Products', value: stats.totalProducts, icon: <FaBoxOpen className="text-2xl lg:text-3xl" />, color: 'bg-purple-500' },
+    { title: 'Pending Orders', value: stats.pendingOrders, icon: <FaClock className="text-2xl lg:text-3xl" />, color: 'bg-yellow-500' },
   ];
 
   return (
     <div>
-      <header className="safe-top sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg">
+      <header className="lg:hidden safe-top sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-lg sm:text-2xl font-display font-bold text-gray-800 dark:text-white truncate">
-              {user?.restaurantName || 'Dashboard'}
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-              Welcome back, {user?.name || 'Vendor'} 👋
-            </p>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 flex items-center justify-center text-base bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow-md shadow-red-500/30 flex-shrink-0">
+              🍽️
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-display font-bold text-gray-800 dark:text-white truncate">
+                {user?.restaurantName || 'Dashboard'}
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
+                Welcome back, {user?.name || 'Vendor'} 👋
+              </p>
+            </div>
           </div>
           <button
             onClick={toggleTheme}
@@ -188,23 +193,23 @@ const VendorDashboard = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-6">
           {statCards.map((stat, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg lg:hover:shadow-xl lg:hover:-translate-y-0.5 transition-all p-4 sm:p-6 lg:p-7"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">{stat.title}</p>
-                  <p className="text-lg sm:text-2xl font-bold text-gray-800 dark:text-white mt-1">
+                  <p className="text-xs sm:text-sm lg:text-base text-gray-500 dark:text-gray-400 truncate">{stat.title}</p>
+                  <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-white mt-1 lg:mt-2">
                     {loading ? <FaSpinner className="animate-spin inline" /> : stat.value}
                   </p>
                 </div>
-                <div className={`${stat.color} p-2 sm:p-3 rounded-xl text-white flex-shrink-0`}>{stat.icon}</div>
+                <div className={`${stat.color} p-2 sm:p-3 lg:p-4 rounded-xl lg:rounded-2xl text-white flex-shrink-0`}>{stat.icon}</div>
               </div>
             </motion.div>
           ))}
@@ -340,10 +345,10 @@ const VendorDashboard = () => {
                       {group.orders.map((order) => (
                         <div
                           key={order._id}
-                          className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                          className="flex items-center gap-2 p-3 lg:p-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                         >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
+                          <div className="min-w-0 flex-1 lg:flex lg:items-center lg:gap-6">
+                            <div className="flex items-center gap-2 flex-wrap lg:flex-shrink-0">
                               <span className="font-bold text-gray-800 dark:text-white text-sm sm:text-base">
                                 Table {order.tableId}
                               </span>
@@ -360,20 +365,23 @@ const VendorDashboard = () => {
                               >
                                 {order.status}
                               </span>
+                              <span className="hidden lg:inline text-xs text-gray-400 dark:text-gray-500">
+                                #{order.orderNumber}
+                              </span>
                             </div>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">#{order.orderNumber}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 truncate mt-1">
+                            <p className="lg:hidden text-xs text-gray-400 dark:text-gray-500">#{order.orderNumber}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 truncate mt-1 lg:mt-0 lg:flex-1">
                               {itemsSummary(order.items)}
                             </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 lg:mt-0 lg:flex-shrink-0">
                               {order.items?.length} items ·{' '}
                               {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
-                          <div className="flex-shrink-0 w-14 sm:w-20 text-right">
-                            <span className="font-semibold text-red-500 text-sm sm:text-base">₹{order.total}</span>
+                          <div className="flex-shrink-0 w-14 sm:w-20 lg:w-24 text-right">
+                            <span className="font-semibold text-red-500 text-sm sm:text-base lg:text-lg">₹{order.total}</span>
                           </div>
-                          <div className="flex-shrink-0 w-14 sm:w-20 text-right">
+                          <div className="flex-shrink-0 w-14 sm:w-20 lg:w-24 text-right">
                             <button
                               onClick={() => setSelectedOrder(order)}
                               className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-colors"
