@@ -38,6 +38,9 @@ const VendorLogin = () => {
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full"
       >
         <div className="text-center mb-6 sm:mb-8">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 flex items-center justify-center text-3xl sm:text-4xl bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl shadow-lg shadow-red-500/30">
+            🍽️
+          </div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-800 dark:text-white">
             Vendor Login
           </h1>
