@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaSpinner, FaImage, FaPlus } from 'react-icons/fa';
+import { FaTimes, FaSpinner, FaImage, FaPlus, FaChevronDown } from 'react-icons/fa';
 import axios from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -27,8 +27,11 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
   const [imagePreview, setImagePreview] = useState(product?.image || '');
   const [newCategory, setNewCategory] = useState('');
   const [showNewCategory, setShowNewCategory] = useState(false);
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
+
+  const selectedCategory = categories.find((c) => c._id === form.categoryId);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -179,35 +182,14 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
-              {!showNewCategory ? (
-                <div className="flex gap-2">
-                  <select
-                    name="categoryId"
-                    value={form.categoryId}
-                    onChange={handleChange}
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.icon} {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => setShowNewCategory(true)}
-                    className="px-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
-                  >
-                    <FaPlus />
-                  </button>
-                </div>
-              ) : (
+
+              {showNewCategory ? (
                 <div className="flex gap-2">
                   <input
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
                     placeholder="New category name"
+                    autoFocus
                     className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                   <button
@@ -225,6 +207,67 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                   >
                     <FaTimes />
                   </button>
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="text-center py-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">No categories yet</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCategory(true)}
+                    className="inline-flex items-center gap-1.5 text-red-500 font-semibold text-sm hover:underline"
+                  >
+                    <FaPlus className="text-xs" /> Add your first category
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setCategoryDropdownOpen((v) => !v)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                  >
+                    <span className={selectedCategory ? '' : 'text-gray-400'}>
+                      {selectedCategory ? `${selectedCategory.icon} ${selectedCategory.name}` : 'Select category'}
+                    </span>
+                    <FaChevronDown
+                      className={`text-gray-400 text-sm transition-transform ${categoryDropdownOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+
+                  {categoryDropdownOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setCategoryDropdownOpen(false)} />
+                      <div className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 max-h-40 overflow-y-auto">
+                        {categories.map((c) => (
+                          <button
+                            key={c._id}
+                            type="button"
+                            onClick={() => {
+                              setForm((prev) => ({ ...prev, categoryId: c._id }));
+                              setCategoryDropdownOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors ${
+                              form.categoryId === c._id
+                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold'
+                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            <span>{c.icon}</span> {c.name}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategoryDropdownOpen(false);
+                            setShowNewCategory(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-1.5 text-left text-sm font-semibold text-red-500 border-t border-gray-100 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <FaPlus className="text-xs" /> Add another category
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

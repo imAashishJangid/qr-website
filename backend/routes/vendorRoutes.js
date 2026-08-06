@@ -13,6 +13,8 @@ import {
   getRevenueSummary,
   listTables,
   addTable,
+  updateTable,
+  deleteTable,
 } from '../controllers/vendorController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -31,5 +33,7 @@ router.get('/recent-orders', protect, getRecentOrders);
 router.get('/revenue', protect, getRevenueSummary);
 router.get('/tables', protect, listTables);
 router.post('/tables', protect, addTable);
+router.put('/tables/:number', protect, updateTable);
+router.delete('/tables/:number', protect, deleteTable);
 
 export default router;

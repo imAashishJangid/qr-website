@@ -382,3 +382,53 @@ export const addTable = async (req, res) => {
     res.status(500).json({ message: 'Failed to add table', error: error.message });
   }
 };
+
+// PUT /api/vendor/tables/:number
+export const updateTable = async (req, res) => {
+  try {
+    const oldNumber = req.params.number;
+    const { newNumber } = req.body;
+    if (!newNumber || !String(newNumber).trim()) {
+      return res.status(400).json({ message: 'New table number is required' });
+    }
+    const trimmedNewNumber = String(newNumber).trim();
+
+    const vendor = await Vendor.findById(req.vendor.id);
+    if (!vendor) return res.status(401).json({ message: 'Vendor not found' });
+
+    const index = vendor.tables.indexOf(oldNumber);
+    if (index === -1) return res.status(404).json({ message: 'Table not found' });
+
+    if (trimmedNewNumber !== oldNumber && vendor.tables.includes(trimmedNewNumber)) {
+      return res.status(409).json({ message: 'This table already exists' });
+    }
+
+    vendor.tables[index] = trimmedNewNumber;
+    await vendor.save();
+
+    res.json(vendor.tables);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update table', error: error.message });
+  }
+};
+
+// DELETE /api/vendor/tables/:number
+export const deleteTable = async (req, res) => {
+  try {
+    const number = req.params.number;
+
+    const vendor = await Vendor.findById(req.vendor.id);
+    if (!vendor) return res.status(401).json({ message: 'Vendor not found' });
+
+    if (!vendor.tables.includes(number)) {
+      return res.status(404).json({ message: 'Table not found' });
+    }
+
+    vendor.tables = vendor.tables.filter((t) => t !== number);
+    await vendor.save();
+
+    res.json(vendor.tables);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete table', error: error.message });
+  }
+};

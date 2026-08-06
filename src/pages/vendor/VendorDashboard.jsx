@@ -18,6 +18,8 @@ import {
   FaChevronRight,
   FaCalendarAlt,
   FaReceipt,
+  FaTrash,
+  FaExclamationTriangle,
 } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import axios from '../../lib/api';
@@ -38,6 +40,8 @@ const VendorDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [tables, setTables] = useState([]);
   const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [deleteTableTarget, setDeleteTableTarget] = useState(null);
+  const [deletingTable, setDeletingTable] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [dateFilter, setDateFilter] = useState('');
@@ -250,6 +254,12 @@ const VendorDashboard = () => {
                   >
                     {menuLink(table)}
                   </a>
+                  <button
+                    onClick={() => setDeleteTableTarget(table)}
+                    className="flex items-center gap-1.5 mt-1 px-3 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors text-xs font-medium"
+                  >
+                    <FaTrash className="text-xs" /> Delete
+                  </button>
                 </div>
               ))}
             </div>
@@ -409,10 +419,31 @@ const VendorDashboard = () => {
       )}
       {showAddTableModal && (
         <AddTableModal
+          tables={tables}
           onClose={() => setShowAddTableModal(false)}
-          onAdded={(updatedTables) => {
+          onSaved={(updatedTables) => {
             setTables(updatedTables);
             setShowAddTableModal(false);
+          }}
+        />
+      )}
+      {deleteTableTarget && (
+        <DeleteTableModal
+          table={deleteTableTarget}
+          deleting={deletingTable}
+          onClose={() => setDeleteTableTarget(null)}
+          onConfirm={async () => {
+            setDeletingTable(true);
+            try {
+              const { data } = await axios.delete(`/api/vendor/tables/${encodeURIComponent(deleteTableTarget)}`);
+              setTables(data);
+              toast.success(`Table ${deleteTableTarget} deleted`);
+              setDeleteTableTarget(null);
+            } catch (error) {
+              toast.error(error.response?.data?.message || 'Failed to delete table');
+            } finally {
+              setDeletingTable(false);
+            }
           }}
         />
       )}
@@ -420,23 +451,26 @@ const VendorDashboard = () => {
   );
 };
 
-const AddTableModal = ({ onClose, onAdded }) => {
+const AddTableModal = ({ tables, onClose, onSaved }) => {
   const [number, setNumber] = useState('');
-  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const trimmed = number.trim();
+  const isDuplicate = trimmed !== '' && tables.some((t) => t.trim().toLowerCase() === trimmed.toLowerCase());
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!number.trim()) return;
+    if (!trimmed || isDuplicate) return;
 
-    setAdding(true);
+    setSaving(true);
     try {
-      const { data } = await axios.post('/api/vendor/tables', { number: number.trim() });
-      toast.success(`Table ${number.trim()} added!`);
-      onAdded(data);
+      const { data } = await axios.post('/api/vendor/tables', { number: trimmed });
+      toast.success(`Table ${trimmed} added!`);
+      onSaved(data);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to add table');
     } finally {
-      setAdding(false);
+      setSaving(false);
     }
   };
 
@@ -474,15 +508,22 @@ const AddTableModal = ({ onClose, onAdded }) => {
               onChange={(e) => setNumber(e.target.value)}
               placeholder="e.g. 5"
               autoFocus
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              className={`w-full px-4 py-2.5 rounded-xl border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 ${
+                isDuplicate
+                  ? 'border-red-400 focus:ring-red-400'
+                  : 'border-gray-200 dark:border-gray-700 focus:ring-red-500'
+              }`}
             />
+            {isDuplicate && (
+              <p className="text-xs text-red-500 mt-1.5">Table {trimmed} is already added</p>
+            )}
           </div>
           <button
             type="submit"
-            disabled={adding}
+            disabled={saving || isDuplicate || !trimmed}
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
           >
-            {adding ? <FaSpinner className="animate-spin" /> : <FaPlus />}
+            {saving ? <FaSpinner className="animate-spin" /> : <FaPlus />}
             Add Table
           </button>
         </form>
@@ -490,6 +531,47 @@ const AddTableModal = ({ onClose, onAdded }) => {
     </motion.div>
   );
 };
+
+const DeleteTableModal = ({ table, deleting, onClose, onConfirm }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
+    onClick={() => !deleting && onClose()}
+  >
+    <motion.div
+      initial={{ y: 40, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      onClick={(e) => e.stopPropagation()}
+      className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm p-6 text-center"
+    >
+      <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/30 text-red-500 flex items-center justify-center mx-auto mb-4">
+        <FaExclamationTriangle className="text-2xl" />
+      </div>
+      <h2 className="text-lg font-bold text-gray-800 dark:text-white">Delete table?</h2>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
+        Table "{table}" and its QR code will be removed. This can't be undone.
+      </p>
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={onClose}
+          disabled={deleting}
+          className="flex-1 py-2.5 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={deleting}
+          className="flex-1 py-2.5 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center"
+        >
+          {deleting ? <FaSpinner className="animate-spin" /> : 'Delete'}
+        </button>
+      </div>
+    </motion.div>
+  </motion.div>
+);
 
 const OrderDetailsModal = ({ order, onClose }) => {
   const statusColor = {
