@@ -5,8 +5,23 @@ import { motion } from 'framer-motion';
 import { useSocket } from '../../context/SocketContext';
 import { useCart } from '../../context/CartContext';
 import api from '../../lib/api';
-import { FaCheckCircle, FaClock, FaUtensils, FaSpinner, FaHome } from 'react-icons/fa';
+import { getCustomerId } from '../../lib/customerId';
+import { FaCheckCircle, FaClock, FaUtensils, FaSpinner, FaHome, FaReceipt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+
+const STATUS_LABELS = {
+  pending: 'Order Received',
+  preparing: 'Preparing',
+  ready: 'Ready',
+  completed: 'Completed',
+};
+
+const STATUS_BADGE_CLASSES = {
+  pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  preparing: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  ready: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  completed: 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+};
 
 const OrderStatusPage = () => {
   const navigate = useNavigate();
@@ -16,6 +31,10 @@ const OrderStatusPage = () => {
   const [orderStatus, setOrderStatus] = useState('pending');
   const [orderDetails, setOrderDetails] = useState(null);
   const [estimatedTime, setEstimatedTime] = useState(15);
+  const [activeTab, setActiveTab] = useState('now');
+  const [previousOrders, setPreviousOrders] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
   // Fetch the order from the backend on load
   useEffect(() => {
@@ -63,6 +82,27 @@ const OrderStatusPage = () => {
       socket.off('orderStatusUpdate', handleStatusUpdate);
     };
   }, [socket, orderId, clearCart]);
+
+  // Lazily load this device's order history (scoped server-side by customerId)
+  // the first time the "Previous" tab is opened, so a completed order never
+  // really disappears — and so it only ever shows orders from THIS customer,
+  // not anyone else who ordered from the same table on a different day.
+  useEffect(() => {
+    if (activeTab !== 'previous' || historyLoaded) return;
+
+    setHistoryLoading(true);
+    api.get(`/api/orders/history/${getCustomerId()}`)
+      .then(({ data }) => setPreviousOrders(data.orders || []))
+      .finally(() => {
+        setHistoryLoading(false);
+        setHistoryLoaded(true);
+      });
+  }, [activeTab, historyLoaded]);
+
+  const viewOrder = (id) => {
+    setActiveTab('now');
+    navigate(`/order-status/${id}`);
+  };
 
   const getStatusIcon = () => {
     switch (orderStatus) {
@@ -158,6 +198,81 @@ const OrderStatusPage = () => {
           </button>
         </div>
 
+        {/* Now / Previous Tabs */}
+        <div className="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-1.5 rounded-2xl shadow-md w-fit mx-auto sm:mx-0">
+          {[
+            { key: 'now', label: 'Now' },
+            { key: 'previous', label: 'Previous' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-5 sm:px-6 py-2 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300 ${
+                activeTab === tab.key
+                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'previous' ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8"
+          >
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+              Previous Orders
+            </h3>
+
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <FaSpinner className="text-3xl text-red-500 animate-spin" />
+              </div>
+            ) : previousOrders.length === 0 ? (
+              <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                No previous orders yet on this device.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {previousOrders.map((order) => (
+                  <button
+                    key={order._id}
+                    onClick={() => viewOrder(order._id)}
+                    className={`w-full text-left p-4 rounded-xl border transition-all hover:shadow-md ${
+                      order._id === orderId
+                        ? 'border-red-500 bg-red-50/50 dark:bg-red-900/10'
+                        : 'border-gray-100 dark:border-gray-700 hover:border-red-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FaReceipt className="text-gray-400 flex-shrink-0" />
+                        <span className="font-semibold text-gray-800 dark:text-white truncate">
+                          #{order.orderNumber}
+                        </span>
+                      </div>
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${STATUS_BADGE_CLASSES[order.status] || STATUS_BADGE_CLASSES.pending}`}>
+                        {STATUS_LABELS[order.status] || order.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="truncate">
+                        {order.items?.length || 0} item{order.items?.length === 1 ? '' : 's'} ·{' '}
+                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span className="font-semibold text-red-500 flex-shrink-0">₹{order.total}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <>
         {/* Status Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -262,6 +377,8 @@ const OrderStatusPage = () => {
           >
             ✅ Collect Order
           </motion.button>
+        )}
+          </>
         )}
       </div>
     </div>

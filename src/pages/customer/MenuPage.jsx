@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import axios from '../../lib/api';
+import { getCustomerId } from '../../lib/customerId';
 import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import { 
@@ -27,6 +28,7 @@ import QuickOrderModal from '../../components/QuickOrderModal';
 const MenuPage = () => {
   const { vendorId, tableId } = useParams();
   const navigate = useNavigate();
+  const customerId = getCustomerId();
   const { theme, toggleTheme } = useTheme();
   const { addToCart, getTotalItems, cart } = useCart();
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -83,13 +85,18 @@ const MenuPage = () => {
     },
   });
 
-  // Ask the backend for this table's active order — works even if localStorage
-  // was cleared or the customer reopened the QR link on another device.
+  // Ask the backend for THIS customer's active order at this table — scoped by
+  // customerId so a new diner who scans the same table's QR later never sees
+  // someone else's still-in-progress order. Works even if localStorage was
+  // cleared or the customer reopened the QR link on another device with the
+  // same customerId (e.g. same browser, reinstalled PWA).
   const { data: activeOrder, isSuccess: activeOrderLoaded } = useQuery({
-    queryKey: ['active-order', vendorId, tableId],
+    queryKey: ['active-order', vendorId, tableId, customerId],
     enabled: !!vendorId && !!tableId,
     queryFn: async () => {
-      const { data } = await axios.get(`/api/orders/active/${vendorId}/${tableId}`);
+      const { data } = await axios.get(`/api/orders/active/${vendorId}/${tableId}`, {
+        params: { customerId },
+      });
       return data.order;
     },
   });
@@ -107,6 +114,25 @@ const MenuPage = () => {
 
   // Show the localStorage guess instantly, then trust the server once it responds.
   const lastOrderId = activeOrderLoaded ? activeOrder?._id : localStorage.getItem('lastOrderId');
+
+  // This customer's full order history (any status), scoped by customerId — the
+  // authoritative source for whether the Track Order button should stay visible
+  // once the active order completes, so it never depends on a client-side list
+  // that could miss orders placed before this device's history existed.
+  const { data: orderHistory } = useQuery({
+    queryKey: ['order-history', customerId],
+    enabled: !!customerId,
+    queryFn: async () => {
+      const { data } = await axios.get(`/api/orders/history/${customerId}`);
+      return data.orders;
+    },
+  });
+
+  // Once any order has ever been placed from this device, keep the Track Order
+  // button around (pointing at the most recent order) instead of hiding it the
+  // moment the active order completes — past orders stay reachable via the
+  // "Previous" tab on the order status page.
+  const trackOrderId = lastOrderId || orderHistory?.[0]?._id;
 
   const hasActiveFilters = !!debouncedSearch || selectedCategory !== 'all' || !!priceRange.min || !!priceRange.max;
 
@@ -255,21 +281,24 @@ const MenuPage = () => {
                 )}
               </button>
 
-              {/* Track Order Button — only shown when there's an order in flight */}
-              {lastOrderId && (
+              {/* Track Order Button — stays visible once any order has been placed,
+                  so past orders remain reachable even after the active one completes */}
+              {trackOrderId && (
                 <button
-                  onClick={() => navigate(`/order-status/${lastOrderId}`)}
+                  onClick={() => navigate(`/order-status/${trackOrderId}`)}
                   className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110"
                   aria-label="Track your order"
                   title="Track your order"
                 >
                   <FaReceipt className="text-xl sm:text-2xl text-gray-700 dark:text-white" />
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [1, 1.4, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.6 }}
-                    className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 shadow"
-                  />
+                  {lastOrderId && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [1, 1.4, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.6 }}
+                      className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 shadow"
+                    />
+                  )}
                 </button>
               )}
 
@@ -719,10 +748,7 @@ const MenuPage = () => {
           >
             <FaShoppingCart className="text-lg" />
             <span className="font-semibold">{totalItems} items in cart</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded-full text-sm">
-              ₹{cart?.reduce((total, item) => total + item.price * item.quantity, 0) || 0}
-            </span>
-          </button>
+                    </button>
         </motion.div>
       )}
     </div>

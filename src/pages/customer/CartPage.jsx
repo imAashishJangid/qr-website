@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../context/CartContext';
 import axios from '../../lib/api';
+import { getCustomerId } from '../../lib/customerId';
 import { FaTrash, FaArrowLeft, FaCreditCard, FaRupeeSign } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import Confetti from 'react-confetti';
@@ -28,6 +29,7 @@ const CartPage = () => {
       const orderData = {
         vendorId: localStorage.getItem('vendorId'),
         tableId: localStorage.getItem('tableId'),
+        customerId: getCustomerId(),
         items: items.map(item => ({
           menuItemId: item._id,
           quantity: item.quantity,

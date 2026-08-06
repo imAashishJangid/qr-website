@@ -125,8 +125,34 @@ export const getStats = async (req, res) => {
 // GET /api/vendor/recent-orders
 export const getRecentOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ vendorId: req.vendor.id }).sort({ createdAt: -1 }).limit(10);
-    res.json(orders);
+    const { date, page = 1, limit = 10 } = req.query;
+    const query = { vendorId: req.vendor.id };
+
+    if (date) {
+      const start = new Date(`${date}T00:00:00`);
+      const end = new Date(`${date}T23:59:59.999`);
+      if (!Number.isNaN(start.getTime())) {
+        query.createdAt = { $gte: start, $lte: end };
+      }
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+
+    const [orders, totalCount] = await Promise.all([
+      Order.find(query)
+        .sort({ createdAt: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum),
+      Order.countDocuments(query),
+    ]);
+
+    res.json({
+      orders,
+      totalCount,
+      totalPages: Math.max(1, Math.ceil(totalCount / limitNum)),
+      currentPage: pageNum,
+    });
   } catch (error) {
     res.status(500).json({ message: 'Failed to load recent orders', error: error.message });
   }

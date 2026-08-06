@@ -12,7 +12,7 @@ const generateOrderNumber = async () => {
 // POST /api/orders
 export const createOrder = async (req, res) => {
   try {
-    const { vendorId, tableId, items, note } = req.body;
+    const { vendorId, tableId, items, note, customerId } = req.body;
 
     if (!vendorId || !tableId || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: 'vendorId, tableId and items are required' });
@@ -42,6 +42,7 @@ export const createOrder = async (req, res) => {
       vendorId,
       orderNumber: await generateOrderNumber(),
       tableId: String(tableId),
+      customerId: customerId || undefined,
       items: resolvedItems,
       note: note || '',
       subtotal,
@@ -68,20 +69,43 @@ export const getOrder = async (req, res) => {
   }
 };
 
-// GET /api/orders/active/:vendorId/:tableId
+// GET /api/orders/active/:vendorId/:tableId?customerId=...
 // Most recent non-completed order for this table, so the customer can find their
 // order status even if localStorage was cleared or they're on a different device.
+// When customerId is given, the lookup is scoped to it — otherwise a new customer
+// scanning a table another customer is still actively ordering at would incorrectly
+// see that other customer's in-progress order.
 export const getActiveOrderForTable = async (req, res) => {
   try {
     const { vendorId, tableId } = req.params;
-    const order = await Order.findOne({
+    const { customerId } = req.query;
+    const query = {
       vendorId,
       tableId: String(tableId),
       status: { $ne: 'completed' },
-    }).sort({ createdAt: -1 });
+    };
+    if (customerId) query.customerId = customerId;
+
+    const order = await Order.findOne(query).sort({ createdAt: -1 });
 
     res.json({ order });
   } catch (error) {
     res.status(500).json({ message: 'Failed to load active order', error: error.message });
+  }
+};
+
+// GET /api/orders/history/:customerId
+// Every order (any status) this anonymous device has ever placed, newest first —
+// powers the "Previous" tab and never depends on any per-table lookup.
+export const getOrderHistoryForCustomer = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const orders = await Order.find({ customerId })
+      .sort({ createdAt: -1 })
+      .limit(30);
+
+    res.json({ orders });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to load order history', error: error.message });
   }
 };

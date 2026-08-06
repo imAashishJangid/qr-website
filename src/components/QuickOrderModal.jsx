@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaSpinner, FaClock, FaMinus, FaPlus } from 'react-icons/fa';
 import axios from '../lib/api';
+import { getCustomerId } from '../lib/customerId';
 import toast from 'react-hot-toast';
 
 const ESTIMATED_MINUTES = '15-20';
@@ -27,6 +28,7 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
       const { data } = await axios.post('/api/orders', {
         vendorId,
         tableId: tableNumber.trim(),
+        customerId: getCustomerId(),
         items: [{ menuItemId: item._id, quantity }],
         note,
       });
