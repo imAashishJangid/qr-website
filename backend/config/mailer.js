@@ -26,4 +26,27 @@ export const sendOtpEmail = async (to, otp) => {
   });
 };
 
+const CONTACT_RECIPIENTS = ['kumawath649@gmail.com', 'ashishjangid006@gmail.com'];
+
+export const sendContactEnquiryEmail = async ({ name, email, phone, message }) => {
+  await transporter.sendMail({
+    from: `"Smart QR Food Website" <${process.env.EMAIL_USER}>`,
+    to: CONTACT_RECIPIENTS,
+    replyTo: email,
+    subject: `New enquiry from ${name} — Smart QR Food`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <h2 style="color: #EF4444; margin-bottom: 4px;">New Website Enquiry</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+          <tr><td style="padding: 8px 0; color: #6B7280; width: 90px;">Name</td><td style="padding: 8px 0; color: #111827; font-weight: 600;">${name}</td></tr>
+          <tr><td style="padding: 8px 0; color: #6B7280;">Email</td><td style="padding: 8px 0; color: #111827;">${email}</td></tr>
+          <tr><td style="padding: 8px 0; color: #6B7280;">Phone</td><td style="padding: 8px 0; color: #111827;">${phone}</td></tr>
+        </table>
+        <p style="color: #6B7280; margin-top: 16px; margin-bottom: 4px;">Message</p>
+        <div style="background: #FEF2F2; color: #374151; padding: 16px; border-radius: 12px; white-space: pre-wrap;">${message}</div>
+      </div>
+    `,
+  });
+};
+
 export default transporter;

@@ -10,6 +10,7 @@ import orderRoutes from './routes/orderRoutes.js';
 import vendorRoutes from './routes/vendorRoutes.js';
 import vendorProductRoutes from './routes/vendorProductRoutes.js';
 import vendorOrderRoutes from './routes/vendorOrderRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -22,6 +23,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/vendor', vendorRoutes);
 app.use('/api/vendor', vendorProductRoutes);
 app.use('/api/vendor', vendorOrderRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
