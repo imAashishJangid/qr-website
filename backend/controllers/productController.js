@@ -1,6 +1,6 @@
 import MenuItem from '../models/MenuItem.js';
 import Category from '../models/Category.js';
-import cloudinary from '../config/cloudinary.js';
+import cloudinary, { deleteCloudinaryImage } from '../config/cloudinary.js';
 
 const isDataUri = (value) => typeof value === 'string' && value.startsWith('data:');
 
@@ -107,7 +107,9 @@ export const updateProduct = async (req, res) => {
     if (isBestseller !== undefined) product.isBestseller = isBestseller;
     if (isNewItem !== undefined) product.isNewItem = isNewItem;
 
+    let oldImage;
     if (isDataUri(image)) {
+      oldImage = product.image;
       const uploaded = await cloudinary.uploader.upload(image, { folder: 'qr-menu/items' });
       product.image = uploaded.secure_url;
     } else if (typeof image === 'string' && image) {
@@ -115,6 +117,7 @@ export const updateProduct = async (req, res) => {
     }
 
     await product.save();
+    if (oldImage) deleteCloudinaryImage(oldImage);
     res.json(product);
   } catch (error) {
     res.status(500).json({ message: 'Failed to update product', error: error.message });
@@ -126,6 +129,7 @@ export const deleteProduct = async (req, res) => {
   try {
     const product = await MenuItem.findOneAndDelete({ _id: req.params.id, vendorId: req.vendor.id });
     if (!product) return res.status(404).json({ message: 'Product not found' });
+    if (product.image) deleteCloudinaryImage(product.image);
     res.json({ message: 'Product deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Failed to delete product', error: error.message });

@@ -5,7 +5,7 @@ import Vendor from '../models/Vendor.js';
 import Order from '../models/Order.js';
 import MenuItem from '../models/MenuItem.js';
 import Category from '../models/Category.js';
-import cloudinary from '../config/cloudinary.js';
+import cloudinary, { deleteCloudinaryImage } from '../config/cloudinary.js';
 
 const signToken = (vendor) =>
   jwt.sign({ id: vendor._id, email: vendor.email, name: vendor.name }, process.env.JWT_SECRET, {
@@ -115,12 +115,15 @@ export const updateProfile = async (req, res) => {
     if (name !== undefined) vendor.name = name;
     if (restaurantName !== undefined) vendor.restaurantName = restaurantName;
 
+    let oldAvatar;
     if (typeof image === 'string' && image.startsWith('data:')) {
+      oldAvatar = vendor.avatar;
       const uploaded = await cloudinary.uploader.upload(image, { folder: 'qr-menu/avatars' });
       vendor.avatar = uploaded.secure_url;
     }
 
     await vendor.save();
+    if (oldAvatar) deleteCloudinaryImage(oldAvatar);
     res.json({ user: toUser(vendor) });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update profile', error: error.message });
