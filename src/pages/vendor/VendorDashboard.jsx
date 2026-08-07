@@ -157,7 +157,7 @@ const VendorDashboard = () => {
     return `${names.slice(0, 2).join(', ')} +${names.length - 2} more`;
   };
 
-  const menuLink = (table) => `${window.location.origin}/menu/${user?.id}/${table}`;
+  const menuLink = (table) => `${import.meta.env.VITE_FRONTEND_URL || window.location.origin}/menu/${user?.id}/${table}`;
 
   const statCards = [
     { title: 'Total Orders', value: stats.totalOrders, icon: <FaUtensils className="text-2xl lg:text-3xl" />, color: 'bg-blue-500' },
