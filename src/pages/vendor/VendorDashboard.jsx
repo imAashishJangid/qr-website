@@ -669,14 +669,18 @@ const OrderDetailsModal = ({ order, onClose }) => {
           )}
 
           <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1.5 text-sm">
-            <div className="flex justify-between text-gray-600 dark:text-gray-300">
-              <span>Subtotal</span>
-              <span>₹{order.subtotal}</span>
-            </div>
-            <div className="flex justify-between text-gray-600 dark:text-gray-300">
-              <span>GST</span>
-              <span>₹{order.gst}</span>
-            </div>
+            {order.subtotal != null && (
+              <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                <span>Subtotal</span>
+                <span>₹{order.subtotal}</span>
+              </div>
+            )}
+            {order.gst != null && (
+              <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                <span>GST</span>
+                <span>₹{order.gst}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-gray-800 dark:text-white text-base pt-1">
               <span>Total</span>
               <span className="text-red-500">₹{order.total}</span>

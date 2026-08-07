@@ -17,9 +17,7 @@ const CartPage = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [orderDetails, setOrderDetails] = useState(null);
 
-  const subtotal = getTotal();
-  const gst = subtotal * 0.05; // 5% GST
-  const total = subtotal + gst;
+  const total = getTotal();
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;
@@ -35,8 +33,6 @@ const CartPage = () => {
           quantity: item.quantity,
           price: item.price,
         })),
-        subtotal,
-        gst,
         total,
       };
 
@@ -182,20 +178,10 @@ const CartPage = () => {
                   Order Summary
                 </h2>
                 
-                <div className="space-y-3 text-gray-600 dark:text-gray-300">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST (5%)</span>
-                    <span>₹{gst.toFixed(2)}</span>
-                  </div>
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
-                    <div className="flex justify-between text-lg font-bold text-gray-800 dark:text-white">
-                      <span>Total</span>
-                      <span className="text-red-500">₹{total.toFixed(2)}</span>
-                    </div>
+                <div className="text-gray-600 dark:text-gray-300">
+                  <div className="flex justify-between text-lg font-bold text-gray-800 dark:text-white">
+                    <span>Total</span>
+                    <span className="text-red-500">₹{total.toFixed(2)}</span>
                   </div>
                 </div>
 
