@@ -23,6 +23,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import axios from '../../lib/api';
 import toast from 'react-hot-toast';
+import Skeleton from '../../components/Skeleton';
 
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -121,7 +122,7 @@ const VendorProfile = () => {
             <div className="min-w-0">
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Total Sell</p>
               <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
-                {loading ? <FaSpinner className="animate-spin" /> : `₹${stats.totalRevenue}`}
+                {loading ? <Skeleton className="h-5 w-14 rounded" /> : `₹${stats.totalRevenue}`}
               </p>
             </div>
           </motion.button>
@@ -136,7 +137,7 @@ const VendorProfile = () => {
             <div className="min-w-0">
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Total Products</p>
               <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
-                {loading ? <FaSpinner className="animate-spin" /> : stats.totalProducts}
+                {loading ? <Skeleton className="h-5 w-8 rounded" /> : stats.totalProducts}
               </p>
             </div>
           </motion.button>
@@ -220,7 +221,7 @@ const VendorProfile = () => {
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Total Sell</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-white">
-                  {loading ? <FaSpinner className="animate-spin" /> : `₹${stats.totalRevenue}`}
+                  {loading ? <Skeleton className="h-5 w-14 rounded" /> : `₹${stats.totalRevenue}`}
                 </p>
               </div>
             </button>
@@ -232,7 +233,7 @@ const VendorProfile = () => {
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Total Products</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-white">
-                  {loading ? <FaSpinner className="animate-spin" /> : stats.totalProducts}
+                  {loading ? <Skeleton className="h-5 w-8 rounded" /> : stats.totalProducts}
                 </p>
               </div>
             </button>
@@ -604,7 +605,11 @@ const RevenueModal = ({ onClose }) => {
 
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-5 text-center">
             {loading ? (
-              <FaSpinner className="text-2xl text-red-500 animate-spin mx-auto" />
+              <div className="flex flex-col items-center gap-2">
+                <Skeleton className="h-3 w-24 rounded" />
+                <Skeleton className="h-8 w-28 rounded" />
+                <Skeleton className="h-3 w-16 rounded" />
+              </div>
             ) : period === 'date' && !customDate ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">Pick a date to see revenue</p>
             ) : (

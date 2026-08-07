@@ -57,21 +57,21 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 40, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl lg:rounded-none shadow-2xl w-full sm:max-w-md lg:max-w-2xl max-h-[90vh] lg:max-h-none overflow-y-auto lg:overflow-visible"
         >
-          <div className="sticky top-0 bg-white dark:bg-gray-800 flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
+          <div className="sticky top-0 lg:static bg-white dark:bg-gray-800 flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
             <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">Order Now</h2>
-            <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+            <button onClick={onClose} className="p-2 rounded-full lg:rounded-none hover:bg-gray-100 dark:hover:bg-gray-700">
               <FaTimes className="text-gray-500 dark:text-gray-400" />
             </button>
           </div>
 
-          <div className="p-4 sm:p-6 space-y-5">
-            <div className="flex items-center gap-4">
+          <div className="p-4 sm:p-6 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-4">
+            <div className="flex items-center gap-4 lg:col-span-2">
               <img
-                src={item.image || 'https://placehold.co/80'}
+                src={item.image || 'https://placehold.co/80/FF6B6B/FFFFFF?text=Food'}
                 alt={item.name}
-                className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                className="w-16 h-16 rounded-xl lg:rounded-none object-cover flex-shrink-0"
               />
               <div className="min-w-0">
                 <h3 className="font-semibold text-gray-800 dark:text-white truncate">{item.name}</h3>
@@ -84,14 +84,14 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900"
+                  className="w-9 h-9 rounded-full lg:rounded-none bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900"
                 >
                   <FaMinus className="text-xs" />
                 </button>
                 <span className="w-8 text-center font-semibold text-gray-800 dark:text-white">{quantity}</span>
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900"
+                  className="w-9 h-9 rounded-full lg:rounded-none bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900"
                 >
                   <FaPlus className="text-xs" />
                 </button>
@@ -106,14 +106,14 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
                 value={tableId || ''}
                 readOnly
                 disabled
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                className="w-full px-4 py-2.5 rounded-xl lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 cursor-not-allowed"
               />
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 Detected from your table's QR code
               </p>
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Any message? (optional)
               </label>
@@ -122,18 +122,18 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
                 onChange={(e) => setNote(e.target.value)}
                 rows={2}
                 placeholder="e.g. less spicy, no onions..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-2.5 rounded-xl lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
               />
             </div>
 
-            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 text-sm text-gray-600 dark:text-gray-300">
+            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-xl lg:rounded-none p-3 text-sm text-gray-600 dark:text-gray-300">
               <span className="flex items-center gap-2">
                 <FaClock className="text-red-400" /> Estimated time
               </span>
               <span className="font-semibold">{ESTIMATED_MINUTES} mins</span>
             </div>
 
-            <div className="flex items-center justify-between text-lg font-bold text-gray-800 dark:text-white">
+            <div className="flex items-center justify-between text-lg font-bold text-gray-800 dark:text-white lg:bg-gray-50 lg:dark:bg-gray-700/50 lg:rounded-none lg:p-3">
               <span>Total</span>
               <span className="text-red-500">₹{totalPrice}</span>
             </div>
@@ -141,7 +141,7 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
             <button
               onClick={handleConfirm}
               disabled={placing}
-              className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full lg:col-span-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl lg:rounded-none hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {placing ? (
                 <>

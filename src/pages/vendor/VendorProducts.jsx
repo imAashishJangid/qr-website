@@ -5,6 +5,7 @@ import { FaPlus, FaEdit, FaTrash, FaSpinner, FaLeaf, FaBoxOpen, FaExclamationTri
 import axios from '../../lib/api';
 import toast from 'react-hot-toast';
 import ProductFormModal from '../../components/ProductFormModal';
+import Skeleton from '../../components/Skeleton';
 
 const VendorProducts = () => {
   const location = useLocation();
@@ -108,8 +109,20 @@ const VendorProducts = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <FaSpinner className="text-3xl text-red-500 animate-spin" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-none shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                <Skeleton className="w-full pt-[110%]" />
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-5 w-1/2 rounded" />
+                  <div className="flex gap-2 mt-3">
+                    <Skeleton className="h-9 flex-1 rounded" />
+                    <Skeleton className="h-9 flex-1 rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-16">
@@ -118,7 +131,7 @@ const VendorProducts = () => {
             <p className="text-gray-500 dark:text-gray-500 mt-2">Add your first product to build your menu.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
             <AnimatePresence>
               {products.map((product) => (
                 <motion.div
@@ -126,33 +139,48 @@ const VendorProducts = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden flex gap-4 p-4 border border-gray-100 dark:border-gray-700"
+                  className="bg-white dark:bg-gray-800 rounded-none shadow-lg hover:shadow-xl transition-shadow overflow-hidden border border-gray-100 dark:border-gray-700"
                 >
-                  <img
-                    src={product.image || 'https://placehold.co/100'}
-                    alt={product.name}
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0 flex flex-col">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-gray-800 dark:text-white leading-snug">{product.name}</h3>
-                      {product.isVeg && (
-                        <span className="flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full flex-shrink-0">
-                          <FaLeaf /> Veg
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-red-500 font-bold text-lg mt-1">₹{product.price}</p>
-                    <div className="flex gap-2 mt-auto pt-3">
+                  <div className="relative w-full pt-[110%] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
+                    <img
+                      src={product.image || 'https://placehold.co/400x300/FF6B6B/FFFFFF?text=Food'}
+                      alt={product.name}
+                      className="absolute top-0 left-0 w-full h-full object-cover"
+                    />
+                    {product.categoryId?.name && (
+                      <span className="absolute top-2 left-2 flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white/90 dark:bg-gray-900/80 backdrop-blur px-2.5 py-1 rounded-none shadow-sm">
+                        {product.categoryId.icon} {product.categoryId.name}
+                      </span>
+                    )}
+                    <span
+                      className={`absolute top-2 right-2 flex items-center gap-1 text-xs font-bold text-white px-2.5 py-1 rounded-none shadow-lg backdrop-blur-sm ${
+                        product.isVeg ? 'bg-green-500/90' : 'bg-red-500/90'
+                      }`}
+                    >
+                      {product.isVeg ? (<><FaLeaf className="text-[10px]" /> Veg</>) : 'Non-Veg'}
+                    </span>
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-800 dark:text-white leading-snug truncate">{product.name}</h3>
+                    {product.description && (
+                      <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                        {product.description}
+                      </p>
+                    )}
+                    <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent mt-2">
+                      ₹{product.price}
+                    </p>
+                    <div className="flex gap-2 mt-3">
                       <button
                         onClick={() => openEditModal(product)}
-                        className="flex items-center justify-center gap-1.5 flex-1 text-sm font-medium px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                        className="flex items-center justify-center gap-1.5 flex-1 text-sm font-medium px-3 py-2 rounded-none bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
                       >
                         <FaEdit /> Edit
                       </button>
                       <button
                         onClick={() => setDeleteTarget(product)}
-                        className="flex items-center justify-center gap-1.5 flex-1 text-sm font-medium px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                        className="flex items-center justify-center gap-1.5 flex-1 text-sm font-medium px-3 py-2 rounded-none bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                       >
                         <FaTrash /> Delete
                       </button>

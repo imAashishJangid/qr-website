@@ -20,10 +20,13 @@ import {
   FaReceipt,
   FaTrash,
   FaExclamationTriangle,
+  FaEye,
+  FaEyeSlash,
 } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import axios from '../../lib/api';
 import toast from 'react-hot-toast';
+import Skeleton from '../../components/Skeleton';
 import { playNotificationChime } from '../../lib/notificationSound';
 
 const VendorDashboard = () => {
@@ -40,6 +43,7 @@ const VendorDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([]);
   const [tables, setTables] = useState([]);
   const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [showTables, setShowTables] = useState(false);
   const [deleteTableTarget, setDeleteTableTarget] = useState(null);
   const [deletingTable, setDeletingTable] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -200,16 +204,16 @@ const VendorDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg lg:hover:shadow-xl lg:hover:-translate-y-0.5 transition-all p-4 sm:p-6 lg:p-7"
+              className="bg-white dark:bg-gray-800 rounded-2xl lg:rounded-none shadow-lg lg:hover:shadow-xl lg:hover:-translate-y-0.5 transition-all p-4 sm:p-6 lg:p-7"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm lg:text-base text-gray-500 dark:text-gray-400 truncate">{stat.title}</p>
                   <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800 dark:text-white mt-1 lg:mt-2">
-                    {loading ? <FaSpinner className="animate-spin inline" /> : stat.value}
+                    {loading ? <Skeleton className="h-6 lg:h-8 w-14 rounded-lg" /> : stat.value}
                   </p>
                 </div>
-                <div className={`${stat.color} p-2 sm:p-3 lg:p-4 rounded-xl lg:rounded-2xl text-white flex-shrink-0`}>{stat.icon}</div>
+                <div className={`${stat.color} p-2 sm:p-3 lg:p-4 rounded-xl lg:rounded-none text-white flex-shrink-0`}>{stat.icon}</div>
               </div>
             </motion.div>
           ))}
@@ -220,48 +224,62 @@ const VendorDashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6"
+          className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-2xl lg:rounded-none shadow-lg p-4 sm:p-6"
         >
           <div className="flex items-center justify-between gap-2 mb-4">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-              <FaQrcode className="text-red-500" /> Tables & QR Codes
-            </h2>
-            <button
-              onClick={() => setShowAddTableModal(true)}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold text-sm sm:text-base hover:shadow-lg transition-all flex-shrink-0"
-            >
-              <FaPlus /> Add Table
-            </button>
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <h2 className="text-base sm:text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-1.5 sm:gap-2 min-w-0">
+                <FaQrcode className="text-red-500 flex-shrink-0" />
+                <span className="truncate">Tables & QR Codes</span>
+              </h2>
+              {tables.length > 0 && (
+                <span className="hidden sm:inline text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                  ({tables.length} table{tables.length === 1 ? '' : 's'} added)
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              {tables.length > 0 && (
+                <button
+                  onClick={() => setShowTables((prev) => !prev)}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white rounded-xl lg:rounded-none font-semibold text-sm sm:text-base hover:bg-gray-200 dark:hover:bg-gray-600 transition-all whitespace-nowrap"
+                >
+                  {showTables ? <FaEyeSlash /> : <FaEye />}
+                  <span className="sm:hidden">{showTables ? 'Hide' : 'Show'}</span>
+                  <span className="hidden sm:inline">{showTables ? 'Hide Tables' : 'Show Tables'}</span>
+                </button>
+              )}
+              <button
+                onClick={() => setShowAddTableModal(true)}
+                className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl lg:rounded-none font-semibold text-sm sm:text-base hover:shadow-lg transition-all whitespace-nowrap"
+              >
+                <FaPlus />
+                <span className="sm:hidden">Add</span>
+                <span className="hidden sm:inline">Add Table</span>
+              </button>
+            </div>
           </div>
 
           {tables.length === 0 ? (
             <p className="text-center text-gray-500 dark:text-gray-400 py-6">
               No tables yet. Add a table number to generate its QR code.
             </p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          ) : !showTables ? null : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {tables.map((table) => (
                 <div
                   key={table}
-                  className="border border-gray-100 dark:border-gray-700 rounded-xl p-4 flex flex-col items-center gap-2"
+                  className="border border-gray-100 dark:border-gray-700 rounded-xl lg:rounded-none p-4 flex flex-col items-center gap-2"
                 >
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(menuLink(table))}`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(menuLink(table))}`}
                     alt={`QR code for table ${table}`}
-                    className="w-28 h-28 sm:w-36 sm:h-36 rounded-lg bg-white p-1"
+                    className="w-44 h-44 sm:w-56 sm:h-56 rounded-lg lg:rounded-none bg-white p-1"
                   />
                   <p className="font-semibold text-gray-800 dark:text-white">Table {table}</p>
-                  <a
-                    href={menuLink(table)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-red-500 hover:underline break-all text-center"
-                  >
-                    {menuLink(table)}
-                  </a>
                   <button
                     onClick={() => setDeleteTableTarget(table)}
-                    className="flex items-center gap-1.5 mt-1 px-3 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors text-xs font-medium"
+                    className="flex items-center gap-1.5 mt-1 px-3 py-1 rounded-lg lg:rounded-none bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors text-xs font-medium"
                   >
                     <FaTrash className="text-xs" /> Delete
                   </button>
@@ -276,7 +294,7 @@ const VendorDashboard = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6"
+          className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-2xl lg:rounded-none shadow-lg p-4 sm:p-6"
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">Recent Orders</h2>
@@ -284,7 +302,7 @@ const VendorDashboard = () => {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => handleDateFilterChange('')}
-                className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
                   dateFilter === '' ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
@@ -292,7 +310,7 @@ const VendorDashboard = () => {
               </button>
               <button
                 onClick={() => handleDateFilterChange(todayStr)}
-                className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
                   dateFilter === todayStr ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
@@ -300,7 +318,7 @@ const VendorDashboard = () => {
               </button>
               <button
                 onClick={() => handleDateFilterChange(yesterdayStr)}
-                className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
                   dateFilter === yesterdayStr ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
@@ -313,15 +331,24 @@ const VendorDashboard = () => {
                   value={dateFilter}
                   max={todayStr}
                   onChange={(e) => handleDateFilterChange(e.target.value)}
-                  className="pl-7 pr-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="pl-7 pr-2 py-1.5 rounded-lg lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
             </div>
           </div>
 
           {loading || ordersLoading ? (
-            <div className="flex justify-center py-8">
-              <FaSpinner className="text-3xl text-red-500 animate-spin" />
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2 p-3 lg:p-4 rounded-xl lg:rounded-none border border-gray-100 dark:border-gray-700">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24 rounded" />
+                    <Skeleton className="h-3 w-40 rounded" />
+                  </div>
+                  <Skeleton className="h-4 w-14 rounded flex-shrink-0" />
+                  <Skeleton className="h-7 w-16 rounded-lg flex-shrink-0" />
+                </div>
+              ))}
             </div>
           ) : recentOrders.length === 0 ? (
             <p className="text-center text-gray-500 dark:text-gray-400 py-8">
@@ -329,10 +356,10 @@ const VendorDashboard = () => {
             </p>
           ) : (
             <>
-              <div className="flex items-center gap-2 px-3 pb-2 text-[11px] sm:text-xs font-bold uppercase tracking-wide text-gray-900 dark:text-white">
+              <div className="flex items-center gap-2 px-3 lg:px-4 pb-2 text-[11px] sm:text-xs font-bold uppercase tracking-wide text-gray-900 dark:text-white">
                 <span className="flex-1">Order</span>
-                <span className="flex-shrink-0 w-14 sm:w-20 text-right">Price</span>
-                <span className="flex-shrink-0 w-14 sm:w-20 text-right">Details</span>
+                <span className="flex-shrink-0 w-14 sm:w-20 lg:w-24 text-right">Price</span>
+                <span className="flex-shrink-0 w-14 sm:w-20 lg:w-24 text-right">Details</span>
               </div>
 
               <div className="space-y-5">
@@ -345,7 +372,7 @@ const VendorDashboard = () => {
                       {group.orders.map((order) => (
                         <div
                           key={order._id}
-                          className="flex items-center gap-2 p-3 lg:p-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                          className="flex items-center gap-2 p-3 lg:p-4 rounded-xl lg:rounded-none border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                         >
                           <div className="min-w-0 flex-1 lg:flex lg:items-center lg:gap-6">
                             <div className="flex items-center gap-2 flex-wrap lg:flex-shrink-0">
@@ -353,7 +380,7 @@ const VendorDashboard = () => {
                                 Table {order.tableId}
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                className={`px-2 py-0.5 rounded-full lg:rounded-none text-xs font-semibold ${
                                   order.status === 'pending'
                                     ? 'bg-yellow-100 text-yellow-800'
                                     : order.status === 'preparing'
@@ -384,7 +411,7 @@ const VendorDashboard = () => {
                           <div className="flex-shrink-0 w-14 sm:w-20 lg:w-24 text-right">
                             <button
                               onClick={() => setSelectedOrder(order)}
-                              className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-colors"
+                              className="text-xs px-3 py-1.5 rounded-lg lg:rounded-none bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-colors"
                             >
                               View
                             </button>
@@ -401,7 +428,7 @@ const VendorDashboard = () => {
                   <button
                     onClick={() => setOrdersPage((p) => Math.max(1, p - 1))}
                     disabled={ordersPage <= 1}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg lg:rounded-none text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <FaChevronLeft className="text-xs" /> Prev
                   </button>
@@ -411,7 +438,7 @@ const VendorDashboard = () => {
                   <button
                     onClick={() => setOrdersPage((p) => Math.min(ordersTotalPages, p + 1))}
                     disabled={ordersPage >= ordersTotalPages}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg lg:rounded-none text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Next <FaChevronRight className="text-xs" />
                   </button>

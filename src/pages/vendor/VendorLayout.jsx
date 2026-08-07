@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { FaChartPie, FaUtensils, FaClipboardList, FaUserCircle, FaSpinner, FaMoon, FaSun } from 'react-icons/fa';
+import { FaChartPie, FaUtensils, FaClipboardList, FaUserCircle, FaMoon, FaSun } from 'react-icons/fa';
+import Skeleton from '../../components/Skeleton';
 
 const tabs = [
   { to: '/vendor/dashboard', label: 'Dashboard', icon: FaChartPie },
@@ -24,8 +25,26 @@ const VendorLayout = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <FaSpinner className="text-4xl text-red-500 animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="sticky top-0 bg-white/90 dark:bg-gray-800/90 border-b border-gray-100 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Skeleton className="w-9 h-9 rounded-xl" />
+            <Skeleton className="h-4 w-28 rounded hidden sm:block" />
+          </div>
+          <div className="hidden lg:flex items-center gap-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-8 w-24 rounded-xl" />
+            ))}
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 lg:h-32 rounded-2xl" />
+            ))}
+          </div>
+          <Skeleton className="h-48 rounded-2xl mt-6 sm:mt-8" />
+        </div>
       </div>
     );
   }

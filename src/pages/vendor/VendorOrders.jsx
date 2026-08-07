@@ -6,6 +6,7 @@ import { FaCheck, FaClock, FaUtensils, FaBell, FaSpinner, FaInbox, FaCommentDots
 import toast from 'react-hot-toast';
 import { playNotificationChime } from '../../lib/notificationSound';
 import axios from '../../lib/api';
+import Skeleton from '../../components/Skeleton';
 
 const VendorOrders = () => {
   const { socket } = useSocket();
@@ -37,7 +38,7 @@ const VendorOrders = () => {
       setOrders((prev) => [newOrder, ...prev]);
       playNotificationChime();
       toast.success(`📦 New order #${newOrder.orderNumber} received!`);
-      if (Notification.permission === 'granted') {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         new Notification('New Order!', { body: `Order #${newOrder.orderNumber} has been placed` });
       }
     };
@@ -49,7 +50,7 @@ const VendorOrders = () => {
     socket.on('newOrder', handleNewOrder);
     socket.on('orderUpdated', handleOrderUpdate);
 
-    if (Notification.permission === 'default') {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
       Notification.requestPermission();
     }
 
@@ -72,12 +73,6 @@ const VendorOrders = () => {
     }
   };
 
-  const getStatusColor = (status) => ({
-    pending: 'bg-yellow-500',
-    preparing: 'bg-blue-500',
-    ready: 'bg-green-500',
-  }[status] || 'bg-gray-500');
-
   const getStatusIcon = (status) => ({
     pending: <FaClock className="text-yellow-500" />,
     preparing: <FaUtensils className="text-blue-500" />,
@@ -85,14 +80,6 @@ const VendorOrders = () => {
   }[status] || <FaSpinner className="text-gray-500" />);
 
   const filteredOrders = orders.filter((order) => selectedTab === 'all' || order.status === selectedTab);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <FaSpinner className="text-4xl text-red-500 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -192,14 +179,30 @@ const VendorOrders = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
-        {filteredOrders.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl lg:rounded-none shadow-lg overflow-hidden">
+                <div className="p-4 lg:p-6 border-b border-gray-100 dark:border-gray-700 space-y-2">
+                  <Skeleton className="h-6 w-24 rounded-lg" />
+                  <Skeleton className="h-3 w-16 rounded" />
+                </div>
+                <div className="p-4 lg:p-6 space-y-3">
+                  <Skeleton className="h-4 w-full rounded" />
+                  <Skeleton className="h-4 w-2/3 rounded" />
+                  <Skeleton className="h-10 w-full rounded-xl lg:rounded-none mt-4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredOrders.length === 0 ? (
           <div className="text-center py-12 lg:py-24">
             <FaInbox className="text-6xl lg:text-7xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl lg:text-2xl font-semibold text-gray-600 dark:text-gray-400">No orders in {selectedTab}</h3>
             <p className="text-gray-500 dark:text-gray-500 mt-2">Waiting for new orders to arrive...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-5">
             <AnimatePresence>
               {filteredOrders.map((order) => (
                 <motion.div
@@ -207,12 +210,12 @@ const VendorOrders = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl lg:hover:-translate-y-0.5 transition-all overflow-hidden"
+                  className="bg-white dark:bg-gray-800 rounded-2xl lg:rounded-none shadow-lg hover:shadow-xl lg:hover:-translate-y-0.5 transition-all overflow-hidden lg:flex lg:flex-col"
                 >
-                  <div className={`p-4 lg:p-5 ${getStatusColor(order.status)} bg-opacity-10`}>
+                  <div className="p-4 lg:p-6 border-b border-gray-100 dark:border-gray-700">
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <span className="inline-block text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-900 dark:text-white bg-white/70 dark:bg-black/20 px-2.5 py-0.5 rounded-lg">
+                        <span className="inline-block text-lg sm:text-xl lg:text-2xl font-extrabold text-gray-900 dark:text-white bg-white/70 dark:bg-black/20 px-2.5 py-0.5 rounded-lg lg:rounded-none">
                           Table {order.tableId}
                         </span>
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">#{order.orderNumber}</p>
@@ -224,8 +227,8 @@ const VendorOrders = () => {
                     </div>
                   </div>
 
-                  <div className="p-4 lg:p-5">
-                    <div className="space-y-2 lg:space-y-2.5">
+                  <div className="p-4 lg:p-6 lg:flex lg:flex-col lg:flex-1">
+                    <div className="space-y-2 lg:space-y-3">
                       {order.items?.map((item, index) => (
                         <div key={index} className="flex justify-between text-sm lg:text-base">
                           <span className="text-gray-700 dark:text-gray-300">{item.quantity}x {item.name}</span>
@@ -235,25 +238,25 @@ const VendorOrders = () => {
                     </div>
 
                     {order.note && (
-                      <div className="mt-3 flex items-start gap-2 text-sm bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 rounded-lg p-2.5">
+                      <div className="mt-3 flex items-start gap-2 text-sm bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 rounded-lg lg:rounded-none p-2.5">
                         <FaCommentDots className="mt-0.5 flex-shrink-0" />
                         <span>{order.note}</span>
                       </div>
                     )}
 
-                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="mt-4 lg:mt-6 pt-4 lg:pt-5 border-t border-gray-200 dark:border-gray-700 lg:flex-1">
                       <div className="flex justify-between font-bold">
                         <span className="text-gray-800 dark:text-white lg:text-lg">Total</span>
                         <span className="text-red-500 lg:text-lg">₹{order.total}</span>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-4 lg:mt-6 flex gap-2">
                       {order.status === 'pending' && (
                         <button
                           onClick={() => updateOrderStatus(order._id, 'preparing')}
                           disabled={updating === order._id}
-                          className="flex-1 bg-blue-500 text-white py-2.5 lg:py-3 rounded-xl hover:bg-blue-600 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
+                          className="flex-1 bg-blue-500 text-white py-2.5 lg:py-3.5 rounded-xl lg:rounded-none hover:bg-blue-600 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
                         >
                           {updating === order._id ? <FaSpinner className="animate-spin mx-auto" /> : 'Receive'}
                         </button>
@@ -262,7 +265,7 @@ const VendorOrders = () => {
                         <button
                           onClick={() => updateOrderStatus(order._id, 'ready')}
                           disabled={updating === order._id}
-                          className="flex-1 bg-green-500 text-white py-2.5 lg:py-3 rounded-xl hover:bg-green-600 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
+                          className="flex-1 bg-green-500 text-white py-2.5 lg:py-3.5 rounded-xl lg:rounded-none hover:bg-green-600 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
                         >
                           {updating === order._id ? <FaSpinner className="animate-spin mx-auto" /> : 'Mark Ready'}
                         </button>
@@ -271,7 +274,7 @@ const VendorOrders = () => {
                         <button
                           onClick={() => updateOrderStatus(order._id, 'completed')}
                           disabled={updating === order._id}
-                          className="flex-1 bg-gray-700 dark:bg-gray-600 text-white py-2.5 lg:py-3 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-500 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
+                          className="flex-1 bg-gray-700 dark:bg-gray-600 text-white py-2.5 lg:py-3.5 rounded-xl lg:rounded-none hover:bg-gray-800 dark:hover:bg-gray-500 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
                         >
                           {updating === order._id ? <FaSpinner className="animate-spin mx-auto" /> : 'Complete Order'}
                         </button>

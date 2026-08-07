@@ -24,6 +24,7 @@ import {
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import QuickOrderModal from '../../components/QuickOrderModal';
+import Skeleton from '../../components/Skeleton';
 
 const MenuPage = () => {
   const { vendorId, tableId } = useParams();
@@ -214,7 +215,7 @@ const MenuPage = () => {
       
       {/* Enhanced Header */}
       <header className="safe-top sticky top-0 z-50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl shadow-lg border-b border-gray-100 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 lg:relative">
           <div className="flex items-center justify-between">
             {/* Logo Section */}
             <div className="flex items-center gap-2 sm:gap-4">
@@ -324,102 +325,106 @@ const MenuPage = () => {
             </div>
           </div>
 
-          {/* Collapsible Search Bar */}
-          <AnimatePresence>
-            {showSearch && (
-              <motion.div
-                initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
-                exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="overflow-hidden"
-              >
-                <div className="relative group">
-                  <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm group-hover:text-red-500 transition-colors" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search for delicious food..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-700/80 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 backdrop-blur-sm"
-                  />
-                  {searchTerm && (
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Collapsible Price Filter Panel */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
-                exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                className="overflow-hidden"
-              >
-                <div className="p-3 sm:p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-700/80 backdrop-blur-sm">
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Price Range</p>
-                  <div className="flex items-center gap-2 mb-3">
+          {/* On desktop these drop down from the search/filter icons as overlays,
+              instead of pushing page content down and stretching full width. */}
+          <div className="lg:absolute lg:right-3 lg:top-full lg:w-96 lg:z-40">
+            {/* Collapsible Search Bar */}
+            <AnimatePresence>
+              {showSearch && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                  animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                  exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="relative group">
+                    <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm group-hover:text-red-500 transition-colors" />
                     <input
-                      type="number"
-                      min="0"
-                      placeholder="Min ₹"
-                      value={priceRange.min}
-                      onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500"
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Search for delicious food..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-11 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 lg:shadow-xl text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 backdrop-blur-sm"
                     />
-                    <span className="text-gray-400 text-sm">to</span>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Max ₹"
-                      value={priceRange.max}
-                      onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500"
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { label: 'Under ₹100', min: '', max: '100' },
-                      { label: '₹100 - ₹300', min: '100', max: '300' },
-                      { label: '₹300 - ₹500', min: '300', max: '500' },
-                      { label: 'Above ₹500', min: '500', max: '' },
-                    ].map((preset) => (
+                    {searchTerm && (
                       <button
-                        key={preset.label}
-                        onClick={() => applyPricePreset(preset.min, preset.max)}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-full border-2 transition-all ${
-                          priceRange.min === preset.min && priceRange.max === preset.max
-                            ? 'bg-red-500 border-red-500 text-white'
-                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-red-500'
-                        }`}
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
                       >
-                        {preset.label}
-                      </button>
-                    ))}
-                    {(priceRange.min || priceRange.max || selectedCategory !== 'all' || searchTerm) && (
-                      <button
-                        onClick={clearFilters}
-                        className="px-3 py-1.5 text-xs font-medium rounded-full border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-300 hover:border-red-500 hover:text-red-500 transition-all"
-                      >
-                        Clear All ✕
+                        ✕
                       </button>
                     )}
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Collapsible Price Filter Panel */}
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                  animate={{ height: 'auto', opacity: 1, marginTop: 12 }}
+                  exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-3 sm:p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 lg:shadow-xl backdrop-blur-sm">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Price Range</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Min ₹"
+                        value={priceRange.min}
+                        onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500"
+                      />
+                      <span className="text-gray-400 text-sm">to</span>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Max ₹"
+                        value={priceRange.max}
+                        onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { label: 'Under ₹100', min: '', max: '100' },
+                        { label: '₹100 - ₹300', min: '100', max: '300' },
+                        { label: '₹300 - ₹500', min: '300', max: '500' },
+                        { label: 'Above ₹500', min: '500', max: '' },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          onClick={() => applyPricePreset(preset.min, preset.max)}
+                          className={`px-3 py-1.5 text-xs font-medium rounded-full border-2 transition-all ${
+                            priceRange.min === preset.min && priceRange.max === preset.max
+                              ? 'bg-red-500 border-red-500 text-white'
+                              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-red-500'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                      {(priceRange.min || priceRange.max || selectedCategory !== 'all' || searchTerm) && (
+                        <button
+                          onClick={clearFilters}
+                          className="px-3 py-1.5 text-xs font-medium rounded-full border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-300 hover:border-red-500 hover:text-red-500 transition-all"
+                        >
+                          Clear All ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Enhanced Categories with Scroll — lives inside the same sticky header so it
@@ -486,16 +491,22 @@ const MenuPage = () => {
       {/* Menu Grid */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-4">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <FaSpinner className="text-red-500 text-2xl animate-pulse" />
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-none shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                <Skeleton className="w-full pt-[75%] sm:pt-[66.67%]" />
+                <div className="p-3 sm:p-4 space-y-2">
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-3 w-full rounded" />
+                  <Skeleton className="h-3 w-2/3 rounded" />
+                  <div className="flex items-center justify-between mt-3">
+                    <Skeleton className="h-5 w-12 rounded" />
+                    <Skeleton className="h-8 w-20 rounded" />
+                  </div>
+                  <Skeleton className="h-9 w-full rounded mt-3" />
+                </div>
               </div>
-            </div>
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium animate-pulse">
-              Loading delicious food...
-            </p>
+            ))}
           </div>
         ) : error ? (
           <div className="text-center py-12">

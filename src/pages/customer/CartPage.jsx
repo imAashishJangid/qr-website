@@ -121,7 +121,7 @@ const CartPage = () => {
                     >
                       <div className="flex items-center gap-3 sm:gap-4 sm:flex-1 min-w-0">
                         <img
-                          src={item.image || 'https://placehold.co/80'}
+                          src={item.image || 'https://placehold.co/80/FF6B6B/FFFFFF?text=Food'}
                           alt={item.name}
                           className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl object-cover flex-shrink-0"
                         />
