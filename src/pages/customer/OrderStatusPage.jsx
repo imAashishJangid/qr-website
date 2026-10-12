@@ -7,7 +7,7 @@ import { useCart } from '../../context/CartContext';
 import api from '../../lib/api';
 import { getCustomerId } from '../../lib/customerId';
 import { playNotificationChime } from '../../lib/notificationSound';
-import { FaCheckCircle, FaClock, FaUtensils, FaSpinner, FaHome, FaReceipt, FaCommentDots } from 'react-icons/fa';
+import { FaCheckCircle, FaClock, FaUtensils, FaSpinner, FaHome, FaReceipt, FaCommentDots, FaTimesCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import Skeleton from '../../components/Skeleton';
 
@@ -16,25 +16,39 @@ const STATUS_LABELS = {
   preparing: 'Preparing',
   ready: 'Ready',
   completed: 'Completed',
+  declined: 'Cancelled',
 };
 
 const STATUS_BADGE_CLASSES = {
-  pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  preparing: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  ready: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  pending: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
+  preparing: 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-100',
+  ready: 'bg-gray-900 text-white dark:bg-white dark:text-gray-900',
   completed: 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+  declined: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
 };
+
+// Declined orders stay on the "Now" tab for a while so the customer actually
+// sees the cancellation and its reason, then move to "Previous".
+const RECENTLY_DECLINED_MS = 60 * 60 * 1000;
+
+const FINISHED_STATUSES = ['completed', 'declined'];
+
+const isShownAsCurrent = (order) =>
+  !FINISHED_STATUSES.includes(order.status) ||
+  (order.status === 'declined' && Date.now() - new Date(order.updatedAt).getTime() < RECENTLY_DECLINED_MS);
 
 const getStatusIcon = (status) => {
   switch (status) {
     case 'pending':
-      return <FaClock className="text-yellow-500 text-4xl sm:text-6xl lg:text-4xl animate-pulse" />;
+      return <FaClock className="text-gray-500 dark:text-gray-300 text-4xl sm:text-6xl lg:text-4xl animate-pulse" />;
     case 'preparing':
-      return <FaUtensils className="text-blue-500 text-4xl sm:text-6xl lg:text-4xl animate-bounce" />;
+      return <FaUtensils className="text-gray-800 dark:text-gray-100 text-4xl sm:text-6xl lg:text-4xl animate-bounce" />;
     case 'ready':
-      return <FaCheckCircle className="text-green-500 text-4xl sm:text-6xl lg:text-4xl animate-pulse" />;
+      return <FaCheckCircle className="text-gray-900 dark:text-white text-4xl sm:text-6xl lg:text-4xl animate-pulse" />;
     case 'completed':
-      return <FaCheckCircle className="text-green-500 text-4xl sm:text-6xl lg:text-4xl" />;
+      return <FaCheckCircle className="text-gray-900 dark:text-white text-4xl sm:text-6xl lg:text-4xl" />;
+    case 'declined':
+      return <FaTimesCircle className="text-red-500 text-4xl sm:text-6xl lg:text-4xl" />;
     default:
       return <FaSpinner className="text-gray-500 text-4xl sm:text-6xl lg:text-4xl animate-spin" />;
   }
@@ -50,23 +64,10 @@ const getStatusText = (status) => {
       return 'Order Ready for Pickup!';
     case 'completed':
       return 'Order Completed';
+    case 'declined':
+      return 'Order Cancelled';
     default:
       return 'Processing...';
-  }
-};
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'pending':
-      return 'bg-yellow-500';
-    case 'preparing':
-      return 'bg-blue-500';
-    case 'ready':
-      return 'bg-green-500';
-    case 'completed':
-      return 'bg-gray-500';
-    default:
-      return 'bg-gray-500';
   }
 };
 
@@ -94,12 +95,12 @@ const OrderStatusPage = () => {
     setActiveLoading(true);
     api.get(`/api/orders/history/${getCustomerId()}`)
       .then(({ data }) => {
-        const active = (data.orders || []).filter((o) => o.status !== 'completed');
+        const active = (data.orders || []).filter(isShownAsCurrent);
 
         if (orderId && !active.some((o) => o._id === orderId)) {
           return api.get(`/api/orders/${orderId}`)
             .then(({ data: order }) => {
-              setActiveOrders(order.status !== 'completed' ? [order, ...active] : active);
+              setActiveOrders(isShownAsCurrent(order) ? [order, ...active] : active);
             })
             .catch(() => setActiveOrders(active));
         }
@@ -138,15 +139,26 @@ const OrderStatusPage = () => {
         toast.success('👨‍🍳 Order received! Preparing your food.');
       }
       if (data.status === 'ready') {
-        toast.success('🎉 Your order is ready for pickup!');
+        toast.success('🎉 Your order is ready for pickup.');
       }
       if (data.status === 'completed') {
         toast.success('✅ Order completed! Thank you for dining with us.');
         clearCart();
         localStorage.removeItem('lastOrderId');
       }
+      if (data.status === 'declined') {
+        toast.error(
+          data.declineReason
+            ? `Your order has been cancelled by the vendor.\nReason: ${data.declineReason}`
+            : 'Your order has been cancelled by the vendor.',
+          { duration: 6000 }
+        );
+        localStorage.removeItem('lastOrderId');
+      }
 
       fetchActiveOrders();
+      // A newly finished order belongs in "Previous" — reload it next time that tab opens.
+      if (FINISHED_STATUSES.includes(data.status)) setHistoryLoaded(false);
     };
 
     socket.on('orderStatusUpdate', handleStatusUpdate);
@@ -165,7 +177,7 @@ const OrderStatusPage = () => {
 
     setHistoryLoading(true);
     api.get(`/api/orders/history/${getCustomerId()}`)
-      .then(({ data }) => setPreviousOrders((data.orders || []).filter((o) => o.status === 'completed')))
+      .then(({ data }) => setPreviousOrders((data.orders || []).filter((o) => FINISHED_STATUSES.includes(o.status))))
       .finally(() => {
         setHistoryLoading(false);
         setHistoryLoaded(true);
@@ -189,7 +201,7 @@ const OrderStatusPage = () => {
           </h1>
           <button
             onClick={backToMenu}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-md hover:shadow-lg transition-all text-gray-700 dark:text-white text-sm sm:text-base"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-md hover:shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-gray-700 dark:text-white text-sm sm:text-base"
           >
             <FaHome /> Home
           </button>
@@ -206,8 +218,8 @@ const OrderStatusPage = () => {
               onClick={() => setActiveTab(tab.key)}
               className={`px-5 sm:px-6 py-2 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300 ${
                 activeTab === tab.key
-                  ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
+                  ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               {tab.label}
@@ -269,8 +281,13 @@ const OrderStatusPage = () => {
                         {order.items.map((item) => item.name).join(', ')}
                       </p>
                     )}
+                    {order.status === 'declined' && order.declineReason && (
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-2 line-clamp-2">
+                        <span className="font-semibold">Reason:</span> {order.declineReason}
+                      </p>
+                    )}
                     {order.note && (
-                      <div className="flex items-start gap-2 text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 rounded-lg lg:rounded-none p-2 mt-2">
+                      <div className="flex items-start gap-2 text-xs bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-gray-900 dark:border-white rounded-lg lg:rounded-none p-2 mt-2">
                         <FaCommentDots className="mt-0.5 flex-shrink-0" />
                         <span className="line-clamp-2">{order.note}</span>
                       </div>
@@ -280,7 +297,7 @@ const OrderStatusPage = () => {
                         {order.items?.length || 0} item{order.items?.length === 1 ? '' : 's'} ·{' '}
                         {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      <span className="font-semibold text-red-500 flex-shrink-0">₹{order.total}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white flex-shrink-0">₹{order.total}</span>
                     </div>
                   </div>
                 ))}
@@ -310,7 +327,7 @@ const OrderStatusPage = () => {
             <p className="text-gray-500 dark:text-gray-400">No active orders right now.</p>
             <button
               onClick={backToMenu}
-              className="mt-4 bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg transition-all"
+              className="mt-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-200 px-6 py-2.5 rounded-full font-semibold hover:shadow-lg transition-all"
             >
               Browse Menu
             </button>
@@ -342,33 +359,54 @@ const OrderStatusPage = () => {
                       {order.tableId && ` · Table ${order.tableId}`}
                     </p>
 
-                    {/* Estimated Time */}
-                    {order.status !== 'completed' && (
-                      <div className="mt-4 lg:mt-3 p-3 lg:p-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl lg:rounded-none">
-                        <p className="text-sm lg:text-xs text-gray-600 dark:text-gray-300">
-                          ⏰ Estimated Time: <span className="font-bold text-red-500">{order.estimatedTime || 15} minutes</span>
-                        </p>
+                    {order.status === 'ready' ? (
+                      /* Once ready, the timeline is replaced by a single clear pickup message */
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="mt-5 lg:mt-4 p-4 lg:p-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl lg:rounded-none"
+                      >
+                        <p className="font-bold text-base sm:text-lg lg:text-sm">Your order is ready for pickup.</p>
+                        <p className="text-sm lg:text-xs opacity-80 mt-1">Please collect it from the counter.</p>
+                      </motion.div>
+                    ) : order.status === 'declined' ? (
+                      <div className="mt-5 lg:mt-4 p-4 lg:p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-xl lg:rounded-none text-left">
+                        <p className="font-semibold text-sm lg:text-xs">Your order has been cancelled by the vendor.</p>
+                        {order.declineReason && (
+                          <p className="text-sm lg:text-xs mt-1">
+                            <span className="font-semibold">Reason:</span> {order.declineReason}
+                          </p>
+                        )}
                       </div>
-                    )}
-
-                    {/* Progress Bar */}
-                    <div className="mt-6 lg:mt-4">
-                      <div className="relative pt-1">
-                        <div className="overflow-hidden h-2 text-xs flex rounded-full lg:rounded-none bg-gray-200 dark:bg-gray-700">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${getProgress(order.status)}%` }}
-                            transition={{ duration: 0.5 }}
-                            className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${getStatusColor(order.status)}`}
-                          />
+                    ) : order.status !== 'completed' && (
+                      <>
+                        {/* Estimated Time */}
+                        <div className="mt-4 lg:mt-3 p-3 lg:p-2.5 bg-gray-50 dark:bg-gray-700 rounded-xl lg:rounded-none">
+                          <p className="text-sm lg:text-xs text-gray-600 dark:text-gray-300">
+                            ⏰ Estimated Time: <span className="font-bold text-gray-900 dark:text-white">{order.estimatedTime || 15} minutes</span>
+                          </p>
                         </div>
-                      </div>
-                      <div className="flex justify-between mt-2 text-xs lg:text-[10px] text-gray-500 dark:text-gray-400">
-                        <span>Order Placed</span>
-                        <span>Preparing</span>
-                        <span>Ready</span>
-                      </div>
-                    </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-6 lg:mt-4">
+                          <div className="relative pt-1">
+                            <div className="overflow-hidden h-2 text-xs flex rounded-full lg:rounded-none bg-gray-200 dark:bg-gray-700">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${getProgress(order.status)}%` }}
+                                transition={{ duration: 0.5 }}
+                                className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gray-900 dark:bg-white"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-between mt-2 text-xs lg:text-[10px] text-gray-500 dark:text-gray-400">
+                            <span>Order Placed</span>
+                            <span>Preparing</span>
+                            <span>Ready</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Order Summary */}
@@ -388,7 +426,7 @@ const OrderStatusPage = () => {
                               {item.name}
                             </span>
                           </div>
-                          <span className="text-sm lg:text-xs font-semibold text-red-500">
+                          <span className="text-sm lg:text-xs font-semibold text-gray-900 dark:text-white">
                             ₹{item.price * item.quantity}
                           </span>
                         </div>
@@ -396,7 +434,7 @@ const OrderStatusPage = () => {
                     </div>
 
                     {order.note && (
-                      <div className="mt-3 lg:mt-2 flex items-start gap-2 text-sm lg:text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 rounded-lg lg:rounded-none p-2.5">
+                      <div className="mt-3 lg:mt-2 flex items-start gap-2 text-sm lg:text-xs bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-gray-900 dark:border-white rounded-lg lg:rounded-none p-2.5">
                         <FaCommentDots className="mt-0.5 flex-shrink-0" />
                         <span>{order.note}</span>
                       </div>
@@ -405,22 +443,11 @@ const OrderStatusPage = () => {
                     <div className="mt-4 lg:mt-3 pt-4 lg:pt-3 border-t-2 border-gray-200 dark:border-gray-700">
                       <div className="flex justify-between text-lg lg:text-base font-bold">
                         <span className="text-gray-800 dark:text-white">Total</span>
-                        <span className="text-red-500">₹{order.total}</span>
+                        <span className="text-gray-900 dark:text-white">₹{order.total}</span>
                       </div>
                     </div>
                   </div>
                 </motion.div>
-
-                {/* Ready Notice */}
-                {order.status === 'ready' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="w-full mt-6 lg:mt-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold py-3 sm:py-4 lg:py-2.5 rounded-xl lg:rounded-none shadow-lg text-center text-sm lg:text-xs sm:text-base"
-                  >
-                    ✅ Order Ready for Pickup! Please Collect
-                  </motion.div>
-                )}
               </div>
             ))}
           </div>

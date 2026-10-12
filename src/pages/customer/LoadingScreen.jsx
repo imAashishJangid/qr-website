@@ -84,17 +84,17 @@ const LoadingScreen = () => {
   }, [tableId, navigate, socket]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="relative w-full max-w-2xl mx-auto">
         {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-orange-400 rounded-full blur-3xl opacity-20 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-400 to-gray-600 rounded-full blur-3xl opacity-20 animate-pulse" />
         
         <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-3xl p-6 sm:p-10 shadow-2xl border border-white/20">
           
           <div className="text-center">
             
             {/* ✅ PNG Image Carousel */}
-            <div className="relative w-full max-w-xs sm:max-w-sm mx-auto mb-6 rounded-2xl overflow-hidden shadow-2xl aspect-square bg-gradient-to-br from-red-100 to-orange-100 dark:from-gray-700 dark:to-gray-800">
+            <div className="relative w-full max-w-xs sm:max-w-sm mx-auto mb-6 rounded-2xl overflow-hidden shadow-2xl aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentImageIndex}
@@ -133,14 +133,14 @@ const LoadingScreen = () => {
               transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
               className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 rounded-full animate-pulse" />
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black rounded-full animate-pulse" />
               <div className="absolute inset-1 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center">
                 <span className="text-2xl sm:text-3xl">🍽️</span>
               </div>
             </motion.div>
 
             {/* Restaurant Name */}
-            <h1 className="text-2xl sm:text-3xl font-display font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent mb-1">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold bg-gradient-to-r from-gray-900 to-black bg-clip-text text-transparent mb-1">
               Smart QR Food
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">
@@ -175,7 +175,7 @@ const LoadingScreen = () => {
             {/* Progress Bar */}
             <div className="w-full max-w-xs h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mx-auto">
               <motion.div
-                className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full"
+                className="h-full bg-gradient-to-r from-gray-900 to-black rounded-full"
                 initial={{ width: '0%' }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.3 }}
@@ -197,17 +197,17 @@ const LoadingScreen = () => {
               <motion.div
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                className="w-1.5 h-1.5 bg-red-500 rounded-full"
+                className="w-1.5 h-1.5 bg-gray-900 dark:bg-white rounded-full"
               />
               <motion.div
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                className="w-1.5 h-1.5 bg-orange-500 rounded-full"
+                className="w-1.5 h-1.5 bg-gray-500 rounded-full"
               />
               <motion.div
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                className="w-1.5 h-1.5 bg-red-500 rounded-full"
+                className="w-1.5 h-1.5 bg-gray-900 dark:bg-white rounded-full"
               />
             </div>
           </div>

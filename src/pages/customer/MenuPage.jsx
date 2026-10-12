@@ -31,7 +31,7 @@ const MenuPage = () => {
   const navigate = useNavigate();
   const customerId = getCustomerId();
   const { theme, toggleTheme } = useTheme();
-  const { addToCart, getTotalItems, cart } = useCart();
+  const { addToCart, getTotalItems, getTotal } = useCart();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -44,6 +44,46 @@ const MenuPage = () => {
   const [quickOrderItem, setQuickOrderItem] = useState(null);
   const categoriesRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  const panelOpen = showSearch || showFilters;
+
+  // Search and filter are mutually exclusive — opening one closes the other.
+  const toggleSearch = () => {
+    setShowFilters(false);
+    setShowSearch((prev) => !prev);
+  };
+
+  const toggleFilters = () => {
+    setShowSearch(false);
+    setShowFilters((prev) => !prev);
+  };
+
+  // Tapping/clicking anywhere outside the open search or filter panel (and its
+  // toggle buttons, marked with data-panel-area) closes it and returns to the
+  // plain menu view. Escape does too.
+  useEffect(() => {
+    if (!panelOpen) return;
+
+    const handlePointerDown = (e) => {
+      if (!e.target.closest?.('[data-panel-area]')) {
+        setShowSearch(false);
+        setShowFilters(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowSearch(false);
+        setShowFilters(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [panelOpen]);
 
   // Debounce search term before hitting the search API
   useEffect(() => {
@@ -209,6 +249,7 @@ const MenuPage = () => {
 
   // Get cart total items count
   const totalItems = getTotalItems();
+  const cartTotal = getTotal();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -222,16 +263,16 @@ const MenuPage = () => {
               <motion.div
                 whileHover={{ rotate: 180, scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="text-2xl sm:text-3xl bg-gradient-to-r from-red-500 to-orange-500 p-1.5 sm:p-2 rounded-xl shadow-lg shadow-red-500/20"
+                className="text-2xl sm:text-3xl bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white p-1.5 sm:p-2 rounded-xl shadow-lg shadow-black/20"
               >
                 🍽️
               </motion.div>
               <div>
-                <h1 className="text-base sm:text-xl font-display font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                <h1 className="text-base sm:text-xl font-display font-bold text-gray-900 dark:text-white">
                   Smart QR Food
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  <FaClock className="text-red-400 text-[10px]" />
+                  <FaClock className="text-gray-400 text-[10px]" />
                   Table #{tableId}
                 </p>
               </div>
@@ -241,30 +282,34 @@ const MenuPage = () => {
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Search Toggle */}
               <button
-                onClick={() => setShowSearch((prev) => !prev)}
+                data-panel-area
+                onClick={toggleSearch}
                 className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
                   showSearch
-                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
+                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                    : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white'
                 }`}
                 aria-label="Toggle search"
+                aria-expanded={showSearch}
               >
                 <FaSearch className="text-base sm:text-xl" />
               </button>
 
               {/* Filter Toggle */}
               <button
-                onClick={() => setShowFilters((prev) => !prev)}
+                data-panel-area
+                onClick={toggleFilters}
                 className={`relative p-2 rounded-full transition-all duration-300 hover:scale-110 ${
                   showFilters
-                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white'
+                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                    : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white'
                 }`}
                 aria-label="Toggle filters"
+                aria-expanded={showFilters}
               >
                 <FaFilter className="text-base sm:text-xl" />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow">
+                  <span className="absolute -top-1 -right-1 bg-gray-600 dark:bg-gray-300 text-white dark:text-gray-900 text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 shadow">
                     {activeFilterCount}
                   </span>
                 )}
@@ -272,7 +317,7 @@ const MenuPage = () => {
 
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110"
+                className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-110"
                 aria-label="Toggle theme"
               >
                 {theme === 'dark' ? (
@@ -287,7 +332,7 @@ const MenuPage = () => {
               {trackOrderId && (
                 <button
                   onClick={() => navigate(`/order-status/${trackOrderId}`)}
-                  className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110"
+                  className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-110"
                   aria-label="Track your order"
                   title="Track your order"
                 >
@@ -297,7 +342,7 @@ const MenuPage = () => {
                       initial={{ scale: 0 }}
                       animate={{ scale: [1, 1.4, 1] }}
                       transition={{ repeat: Infinity, duration: 1.6 }}
-                      className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-500 shadow"
+                      className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-gray-900 dark:bg-white ring-2 ring-white dark:ring-gray-800 shadow"
                     />
                   )}
                 </button>
@@ -306,16 +351,16 @@ const MenuPage = () => {
               {/* Enhanced Cart Button */}
               <button
                 onClick={() => navigate('/cart')}
-                className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 hover:scale-110 group"
+                className="relative p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-110 group"
                 aria-label="View cart"
               >
                 <div className="relative">
-                  <FaShoppingCart className="text-xl sm:text-2xl text-gray-700 dark:text-white group-hover:text-red-500 transition-colors" />
+                  <FaShoppingCart className="text-xl sm:text-2xl text-gray-700 dark:text-white group-hover:text-gray-500 dark:group-hover:text-gray-300 transition-colors" />
                   {totalItems > 0 && (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] sm:text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-lg shadow-red-500/50"
+                      className="absolute -top-2 -right-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] sm:text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-lg shadow-black/30"
                     >
                       {totalItems}
                     </motion.span>
@@ -327,7 +372,7 @@ const MenuPage = () => {
 
           {/* On desktop these drop down from the search/filter icons as overlays,
               instead of pushing page content down and stretching full width. */}
-          <div className="lg:absolute lg:right-3 lg:top-full lg:w-96 lg:z-40">
+          <div data-panel-area className="lg:absolute lg:right-3 lg:top-full lg:w-96 lg:z-40">
             {/* Collapsible Search Bar */}
             <AnimatePresence>
               {showSearch && (
@@ -339,19 +384,19 @@ const MenuPage = () => {
                   className="overflow-hidden"
                 >
                   <div className="relative group">
-                    <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm group-hover:text-red-500 transition-colors" />
+                    <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm group-hover:text-gray-900 dark:group-hover:text-white transition-colors" />
                     <input
                       ref={searchInputRef}
                       type="text"
                       placeholder="Search for delicious food..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-11 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 lg:shadow-xl text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 backdrop-blur-sm"
+                      className="w-full pl-11 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 lg:shadow-xl text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/20 focus:border-gray-900 dark:focus:border-gray-300 transition-all duration-300 backdrop-blur-sm"
                     />
                     {searchTerm && (
                       <button
                         onClick={() => setSearchTerm('')}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                       >
                         ✕
                       </button>
@@ -380,7 +425,7 @@ const MenuPage = () => {
                         placeholder="Min ₹"
                         value={priceRange.min}
                         onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500"
+                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/20 focus:border-gray-900 dark:focus:border-gray-300"
                       />
                       <span className="text-gray-400 text-sm">to</span>
                       <input
@@ -389,7 +434,7 @@ const MenuPage = () => {
                         placeholder="Max ₹"
                         value={priceRange.max}
                         onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 focus:border-red-500"
+                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/20 focus:border-gray-900 dark:focus:border-gray-300"
                       />
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -404,8 +449,8 @@ const MenuPage = () => {
                           onClick={() => applyPricePreset(preset.min, preset.max)}
                           className={`px-3 py-1.5 text-xs font-medium rounded-full border-2 transition-all ${
                             priceRange.min === preset.min && priceRange.max === preset.max
-                              ? 'bg-red-500 border-red-500 text-white'
-                              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-red-500'
+                              ? 'bg-gray-900 border-gray-900 text-white dark:bg-white dark:border-white dark:text-gray-900'
+                              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600'
                           }`}
                         >
                           {preset.label}
@@ -414,7 +459,7 @@ const MenuPage = () => {
                       {(priceRange.min || priceRange.max || selectedCategory !== 'all' || searchTerm) && (
                         <button
                           onClick={clearFilters}
-                          className="px-3 py-1.5 text-xs font-medium rounded-full border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-300 hover:border-red-500 hover:text-red-500 transition-all"
+                          className="px-3 py-1.5 text-xs font-medium rounded-full border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-300 hover:border-gray-900 hover:text-gray-900 dark:hover:border-white dark:hover:text-white transition-all"
                         >
                           Clear All ✕
                         </button>
@@ -450,8 +495,8 @@ const MenuPage = () => {
                 onClick={() => setSelectedCategory('all')}
                 className={`flex-shrink-0 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 whitespace-nowrap ${
                   selectedCategory === 'all'
-                    ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30 scale-105'
-                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-105'
+                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20 scale-105'
+                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 hover:scale-105'
                 }`}
               >
                 <span className="flex items-center gap-1.5">
@@ -465,8 +510,8 @@ const MenuPage = () => {
                   onClick={() => setSelectedCategory(category._id)}
                   className={`flex-shrink-0 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 whitespace-nowrap ${
                     selectedCategory === category._id
-                      ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30 scale-105'
-                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 hover:scale-105'
+                      ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20 scale-105'
+                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 hover:scale-105'
                   }`}
                 >
                   <span className="flex items-center gap-1.5">
@@ -488,8 +533,8 @@ const MenuPage = () => {
         </div>
       </header>
 
-      {/* Menu Grid */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+      {/* Menu Grid — extra bottom padding while the floating cart is showing so it never hides the last row */}
+      <div className={`max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 ${totalItems > 0 ? 'pb-28 sm:pb-28' : ''}`}>
         {isLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -519,7 +564,7 @@ const MenuPage = () => {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+              className="mt-4 px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors"
             >
               Retry
             </button>
@@ -573,12 +618,12 @@ const MenuPage = () => {
                     {/* Image Container */}
                     <div className="relative w-full pt-[75%] sm:pt-[66.67%] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
                       <img
-                        src={item.image || 'https://placehold.co/400x300/FF6B6B/FFFFFF?text=Food'}
+                        src={item.image || 'https://placehold.co/400x300/E5E7EB/111827?text=Food'}
                         alt={item.name}
                         className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         loading="lazy"
                         onError={(e) => {
-                          e.target.src = 'https://placehold.co/400x300/FF6B6B/FFFFFF?text=Food';
+                          e.target.src = 'https://placehold.co/400x300/E5E7EB/111827?text=Food';
                         }}
                       />
                       {/* Gradient Overlay */}
@@ -590,7 +635,7 @@ const MenuPage = () => {
                           <motion.span
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-none shadow-lg flex items-center gap-1"
+                            className="bg-gray-900/90 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-none shadow-lg flex items-center gap-1"
                           >
                             <FaStar className="text-[8px] sm:text-[10px]" /> Bestseller
                           </motion.span>
@@ -600,7 +645,7 @@ const MenuPage = () => {
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.1 }}
-                            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-none shadow-lg"
+                            className="bg-white/90 text-gray-900 text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-none shadow-lg"
                           >
                             New
                           </motion.span>
@@ -629,7 +674,7 @@ const MenuPage = () => {
                         className="absolute bottom-2 right-2 bg-white dark:bg-gray-800 p-1.5 sm:p-2 rounded-none shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
                         aria-label="Quick add"
                       >
-                        <FaShoppingCart className="text-red-500 text-xs sm:text-sm" />
+                        <FaShoppingCart className="text-gray-900 dark:text-white text-xs sm:text-sm" />
                       </button>
                     </div>
 
@@ -640,7 +685,7 @@ const MenuPage = () => {
                           {item.name}
                         </h3>
                         {item.rating && (
-                          <span className="flex items-center gap-0.5 text-xs text-yellow-500 bg-yellow-50 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded-none flex-shrink-0">
+                          <span className="flex items-center gap-0.5 text-xs text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-none flex-shrink-0">
                             <FaStar className="text-[10px]" /> {item.rating}
                           </span>
                         )}
@@ -652,7 +697,7 @@ const MenuPage = () => {
                       
                       <div className="mt-3 flex flex-row items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                          <span className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                             ₹{item.price}
                           </span>
                           {item.originalPrice && (
@@ -666,7 +711,7 @@ const MenuPage = () => {
                         <div className="flex items-center gap-1.5 sm:gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-none p-1 flex-shrink-0">
                           <button
                             onClick={() => handleQuantityChange(item._id, -1)}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-none bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-all duration-300 flex items-center justify-center text-sm sm:text-base shadow-sm"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-none bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900 transition-all duration-300 flex items-center justify-center text-sm sm:text-base shadow-sm"
                             aria-label="Decrease quantity"
                           >
                             -
@@ -676,7 +721,7 @@ const MenuPage = () => {
                           </span>
                           <button
                             onClick={() => handleQuantityChange(item._id, 1)}
-                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-none bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-all duration-300 flex items-center justify-center text-sm sm:text-base shadow-sm"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-none bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-gray-900 transition-all duration-300 flex items-center justify-center text-sm sm:text-base shadow-sm"
                             aria-label="Increase quantity"
                           >
                             +
@@ -691,7 +736,7 @@ const MenuPage = () => {
                         disabled={!quantities[item._id]}
                         className={`w-full mt-3 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-none transition-all duration-300 ${
                           quantities[item._id]
-                            ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02]'
+                            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20 hover:bg-gray-700 dark:hover:bg-gray-200 hover:scale-[1.02]'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                         }`}
                       >
@@ -709,7 +754,7 @@ const MenuPage = () => {
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setQuickOrderItem(item)}
-                        className="w-full mt-2 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-none border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300"
+                        className="w-full mt-2 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-none border-2 border-gray-900 dark:border-white text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300"
                       >
                         Order Now
                       </motion.button>
@@ -739,29 +784,42 @@ const MenuPage = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-red-500 to-orange-500 text-white p-3 sm:p-4 rounded-full shadow-2xl shadow-red-500/50 hover:shadow-red-500/70 transition-all duration-300 hover:scale-110"
+            className={`fixed right-4 sm:right-6 z-50 bg-gray-900 dark:bg-white text-white dark:text-gray-900 p-3 sm:p-4 rounded-full shadow-2xl shadow-black/30 hover:bg-gray-700 dark:hover:bg-gray-200 transition-all duration-300 hover:scale-110 ${
+              totalItems > 0 ? 'bottom-24' : 'bottom-6'
+            }`}
+            aria-label="Scroll to top"
           >
             <FaArrowLeft className="rotate-90 text-sm sm:text-base" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Floating Cart Button (Mobile) */}
-      {totalItems > 0 && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="safe-bottom fixed bottom-20 left-1/2 transform -translate-x-1/2 z-40 sm:hidden"
-        >
-          <button
-            onClick={() => navigate('/cart')}
-            className="bg-gradient-to-r from-red-500 to-orange-500 text-white px-6 py-3 rounded-full shadow-2xl shadow-red-500/50 flex items-center gap-3"
+      {/* Floating Cart Button — appears once the cart has items, on every screen size */}
+      <AnimatePresence>
+        {totalItems > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="safe-bottom fixed bottom-4 inset-x-0 z-40 flex justify-center px-4 pointer-events-none"
           >
-            <FaShoppingCart className="text-lg" />
-            <span className="font-semibold">{totalItems} items in cart</span>
-                    </button>
-        </motion.div>
-      )}
+            <button
+              onClick={() => navigate('/cart')}
+              className="pointer-events-auto w-full max-w-md bg-gray-900 dark:bg-white text-white dark:text-gray-900 pl-5 pr-4 py-3 rounded-full shadow-2xl shadow-black/40 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors flex items-center justify-between gap-3"
+            >
+              <span className="flex items-center gap-3 min-w-0">
+                <FaShoppingCart className="text-lg flex-shrink-0" />
+                <span className="font-semibold truncate">
+                  {totalItems} {totalItems === 1 ? 'item' : 'items'} · ₹{cartTotal}
+                </span>
+              </span>
+              <span className="flex items-center gap-1.5 font-semibold text-sm flex-shrink-0">
+                View Cart <FaArrowRight className="text-xs" />
+              </span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -85,13 +85,13 @@ const VendorProfile = () => {
         >
           <button
             onClick={() => setShowEditModal(true)}
-            className="absolute top-4 right-4 sm:top-5 sm:right-5 flex items-center gap-1.5 text-sm font-medium text-red-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="absolute top-4 right-4 sm:top-5 sm:right-5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
             <FaPen className="text-xs" /> Edit
           </button>
 
           <div className="flex flex-col items-center text-center gap-1 py-2 sm:py-4">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-red-500 to-orange-500 text-white flex items-center justify-center text-3xl sm:text-4xl font-bold overflow-hidden ring-4 ring-red-50 dark:ring-gray-700 mb-3">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center text-3xl sm:text-4xl font-bold overflow-hidden ring-4 ring-gray-100 dark:ring-gray-700 mb-3">
               {user?.avatar ? (
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               ) : (
@@ -102,10 +102,10 @@ const VendorProfile = () => {
               {user?.name}
             </h2>
             <p className="flex items-center justify-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mt-1.5 truncate max-w-full">
-              <FaStore className="flex-shrink-0 text-red-400 text-xs" /> {user?.restaurantName}
+              <FaStore className="flex-shrink-0 text-gray-400 text-xs" /> {user?.restaurantName}
             </p>
             <p className="flex items-center justify-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate max-w-full">
-              <FaEnvelope className="flex-shrink-0 text-red-400 text-xs" /> {user?.email}
+              <FaEnvelope className="flex-shrink-0 text-gray-400 text-xs" /> {user?.email}
             </p>
           </div>
         </motion.div>
@@ -118,7 +118,7 @@ const VendorProfile = () => {
             onClick={() => setShowRevenueModal(true)}
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-5 flex items-center gap-3 text-left"
           >
-            <div className="bg-green-500 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
+            <div className="bg-gray-900 dark:bg-gray-700 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
             <div className="min-w-0">
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Total Sell</p>
               <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
@@ -133,7 +133,7 @@ const VendorProfile = () => {
             onClick={() => navigate('/vendor/products')}
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-5 flex items-center gap-3 text-left"
           >
-            <div className="bg-purple-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
+            <div className="bg-gray-600 dark:bg-gray-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
             <div className="min-w-0">
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Total Products</p>
               <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
@@ -181,7 +181,7 @@ const VendorProfile = () => {
           <div className="absolute top-6 right-6 flex items-center gap-2">
             <button
               onClick={() => setShowEditModal(true)}
-              className="flex items-center gap-1.5 text-sm font-medium text-red-500 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               <FaPen className="text-xs" /> Edit
             </button>
@@ -194,7 +194,7 @@ const VendorProfile = () => {
           </div>
 
           <div className="flex items-center gap-8">
-            <div className="w-44 h-44 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-white flex items-center justify-center text-5xl font-bold overflow-hidden ring-4 ring-red-50 dark:ring-gray-700 flex-shrink-0">
+            <div className="w-44 h-44 rounded-2xl bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center text-5xl font-bold overflow-hidden ring-4 ring-gray-100 dark:ring-gray-700 flex-shrink-0">
               {user?.avatar ? (
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               ) : (
@@ -204,10 +204,10 @@ const VendorProfile = () => {
             <div className="min-w-0 flex-1">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white truncate">{user?.name}</h2>
               <p className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-                <FaStore className="flex-shrink-0 text-red-400 text-xs" /> {user?.restaurantName}
+                <FaStore className="flex-shrink-0 text-gray-400 text-xs" /> {user?.restaurantName}
               </p>
               <p className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                <FaEnvelope className="flex-shrink-0 text-red-400 text-xs" /> {user?.email}
+                <FaEnvelope className="flex-shrink-0 text-gray-400 text-xs" /> {user?.email}
               </p>
             </div>
           </div>
@@ -217,7 +217,7 @@ const VendorProfile = () => {
               onClick={() => setShowRevenueModal(true)}
               className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
             >
-              <div className="bg-green-500 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
+              <div className="bg-gray-900 dark:bg-gray-700 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Total Sell</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-white">
@@ -229,7 +229,7 @@ const VendorProfile = () => {
               onClick={() => navigate('/vendor/products')}
               className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
             >
-              <div className="bg-purple-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
+              <div className="bg-gray-600 dark:bg-gray-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Total Products</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-white">
@@ -241,7 +241,7 @@ const VendorProfile = () => {
               onClick={() => navigate('/vendor/products', { state: { openAdd: true } })}
               className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
             >
-              <div className="bg-gradient-to-r from-red-500 to-orange-500 p-3 rounded-xl text-white flex-shrink-0"><FaPlus /></div>
+              <div className="bg-gradient-to-r from-gray-900 to-black p-3 rounded-xl text-white flex-shrink-0"><FaPlus /></div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Add</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-white">Product</p>
@@ -289,7 +289,7 @@ const VendorProfile = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           onClick={() => navigate('/vendor/products', { state: { openAdd: true } })}
-          className="lg:hidden w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all"
+          className="lg:hidden w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all"
         >
           <FaPlus /> Add Products
         </motion.button>
@@ -302,7 +302,7 @@ const VendorProfile = () => {
           className="lg:hidden w-full bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 flex items-center justify-between"
         >
           <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-            <FaLock className="text-red-500" /> Reset Password
+            <FaLock className="text-gray-700 dark:text-gray-300" /> Reset Password
           </h3>
           <FaChevronDown className="text-gray-400 -rotate-90" />
         </motion.button>
@@ -365,7 +365,7 @@ const ResetPasswordModal = ({ onClose }) => {
       >
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <FaLock className="text-red-500" /> Reset Password
+            <FaLock className="text-gray-700 dark:text-gray-300" /> Reset Password
           </h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
             <FaTimes className="text-gray-500 dark:text-gray-400" />
@@ -380,7 +380,7 @@ const ResetPasswordModal = ({ onClose }) => {
             onChange={(e) => setPasswords((p) => ({ ...p, currentPassword: e.target.value }))}
             required
             autoFocus
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
           />
           <input
             type="password"
@@ -389,7 +389,7 @@ const ResetPasswordModal = ({ onClose }) => {
             onChange={(e) => setPasswords((p) => ({ ...p, newPassword: e.target.value }))}
             required
             minLength={6}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
           />
           <button
             type="submit"
@@ -471,7 +471,7 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
                   <FaCamera className="text-2xl text-gray-400" />
                 )}
               </div>
-              <span className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-xs">
+              <span className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 flex items-center justify-center text-xs">
                 <FaCamera />
               </span>
               <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
@@ -486,7 +486,7 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
               value={form.name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
             />
           </div>
 
@@ -498,7 +498,7 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
               value={form.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
             />
           </div>
 
@@ -511,14 +511,14 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
               value={form.restaurantName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
             />
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? <FaSpinner className="animate-spin" /> : 'Save Changes'}
           </button>
@@ -584,8 +584,8 @@ const RevenueModal = ({ onClose }) => {
                 onClick={() => setPeriod(opt.key)}
                 className={`py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors ${
                   period === opt.key
-                    ? 'bg-red-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 {opt.label}
@@ -599,7 +599,7 @@ const RevenueModal = ({ onClose }) => {
               value={customDate}
               max={todayStr}
               onChange={(e) => setCustomDate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
             />
           )}
 
@@ -615,7 +615,7 @@ const RevenueModal = ({ onClose }) => {
             ) : (
               <>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{periodLabel}</p>
-                <p className="text-3xl font-bold text-red-500 mt-1">₹{summary?.totalRevenue ?? 0}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">₹{summary?.totalRevenue ?? 0}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{summary?.totalOrders ?? 0} orders</p>
               </>
             )}

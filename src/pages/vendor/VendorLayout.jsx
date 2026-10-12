@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import axios from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useSocket } from '../../context/SocketContext';
 import { FaChartPie, FaUtensils, FaClipboardList, FaUserCircle, FaMoon, FaSun } from 'react-icons/fa';
 import Skeleton from '../../components/Skeleton';
 
@@ -13,15 +15,52 @@ const tabs = [
 ];
 
 const VendorLayout = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { socket } = useSocket();
   const navigate = useNavigate();
+  // Ids of orders still waiting for the vendor to accept or decline. The Orders
+  // nav dot shows while this is non-empty and disappears once nothing is pending.
+  const [pendingOrderIds, setPendingOrderIds] = useState(() => new Set());
+  const hasNewOrder = pendingOrderIds.size > 0;
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate('/vendor/login');
     }
   }, [loading, isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    axios.get('/api/vendor/orders')
+      .then(({ data }) => {
+        setPendingOrderIds(new Set(data.filter((o) => o.status === 'pending').map((o) => o._id)));
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!socket || !user?.id) return;
+    socket.emit('join-vendor', user.id);
+
+    const trackOrder = (order) => {
+      setPendingOrderIds((prev) => {
+        const isPending = order.status === 'pending';
+        if (isPending === prev.has(order._id)) return prev;
+        const next = new Set(prev);
+        if (isPending) next.add(order._id);
+        else next.delete(order._id);
+        return next;
+      });
+    };
+
+    socket.on('newOrder', trackOrder);
+    socket.on('orderUpdated', trackOrder);
+    return () => {
+      socket.off('newOrder', trackOrder);
+      socket.off('orderUpdated', trackOrder);
+    };
+  }, [socket, user?.id]);
 
   if (loading) {
     return (
@@ -56,32 +95,39 @@ const VendorLayout = () => {
       {/* Desktop top nav */}
       <nav className="hidden lg:block sticky top-0 z-50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-b border-gray-100 dark:border-gray-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 flex items-center justify-center text-lg bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow-md shadow-red-500/30">
+          <button
+            type="button"
+            onClick={() => navigate('/vendor/dashboard')}
+            className="flex items-center gap-2.5"
+          >
+            <div className="w-9 h-9 flex items-center justify-center text-lg bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white rounded-xl shadow-md shadow-black/20">
               🍽️
             </div>
             <span className="font-display font-bold text-gray-800 dark:text-white">Smart QR Food</span>
-          </div>
+          </button>
           <div className="flex items-center gap-1">
             {tabs.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  `relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-red-50 dark:bg-red-900/20 text-red-500'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`
                 }
               >
                 <Icon className="text-base" />
                 {label}
+                {to === '/vendor/orders' && hasNewOrder && (
+                  <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-gray-900 dark:bg-white" />
+                )}
               </NavLink>
             ))}
             <button
               onClick={toggleTheme}
-              className="ml-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="ml-2 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               {theme === 'dark' ? <FaSun className="text-yellow-500" /> : <FaMoon className="text-gray-700" />}
             </button>
@@ -101,14 +147,19 @@ const VendorLayout = () => {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors ${
+                `relative flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors ${
                   isActive
-                    ? 'text-red-500'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-red-400'
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                 }`
               }
             >
-              <Icon className="text-lg" />
+              <span className="relative">
+                <Icon className="text-lg" />
+                {to === '/vendor/orders' && hasNewOrder && (
+                  <span className="absolute -top-0.5 -right-1.5 w-2 h-2 rounded-full bg-gray-900 dark:bg-white" />
+                )}
+              </span>
               {label}
             </NavLink>
           ))}

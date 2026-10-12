@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { motion } from 'framer-motion';
@@ -33,9 +34,12 @@ const VendorDashboard = () => {
   const { user } = useAuth();
   const { socket } = useSocket();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
+    todayOrders: 0,
+    todayRevenue: 0,
     totalCustomers: 0,
     totalProducts: 0,
     pendingOrders: 0,
@@ -164,21 +168,25 @@ const VendorDashboard = () => {
   const menuLink = (table) => `${import.meta.env.VITE_FRONTEND_URL || window.location.origin}/menu/${user?.id}/${table}`;
 
   const statCards = [
-    { title: 'Total Orders', value: stats.totalOrders, icon: <FaUtensils className="text-2xl lg:text-3xl" />, color: 'bg-blue-500' },
-    { title: 'Total Revenue', value: `₹${stats.totalRevenue}`, icon: <FaMoneyBillWave className="text-2xl lg:text-3xl" />, color: 'bg-green-500' },
-    { title: 'Total Products', value: stats.totalProducts, icon: <FaBoxOpen className="text-2xl lg:text-3xl" />, color: 'bg-purple-500' },
-    { title: 'Pending Orders', value: stats.pendingOrders, icon: <FaClock className="text-2xl lg:text-3xl" />, color: 'bg-yellow-500' },
+    { title: "Today's Orders", value: stats.todayOrders, icon: <FaUtensils className="text-2xl lg:text-3xl" />, color: 'bg-gray-900 dark:bg-gray-700' },
+    { title: "Today's Revenue", value: `₹${stats.todayRevenue}`, icon: <FaMoneyBillWave className="text-2xl lg:text-3xl" />, color: 'bg-gray-800 dark:bg-gray-600' },
+    { title: 'Total Products', value: stats.totalProducts, icon: <FaBoxOpen className="text-2xl lg:text-3xl" />, color: 'bg-gray-600 dark:bg-gray-500' },
+    { title: 'Pending Orders', value: stats.pendingOrders, icon: <FaClock className="text-2xl lg:text-3xl" />, color: 'bg-gray-500 dark:bg-gray-400' },
   ];
 
   return (
     <div>
       <header className="lg:hidden safe-top sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 flex items-center justify-center text-base bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow-md shadow-red-500/30 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => navigate('/vendor/dashboard')}
+            className="flex items-center gap-2.5 min-w-0"
+          >
+            <div className="w-9 h-9 flex items-center justify-center text-base bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white rounded-xl shadow-md shadow-black/20 flex-shrink-0">
               🍽️
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 text-left">
               <h1 className="text-lg sm:text-2xl font-display font-bold text-gray-800 dark:text-white truncate">
                 {user?.restaurantName || 'Dashboard'}
               </h1>
@@ -186,10 +194,10 @@ const VendorDashboard = () => {
                 Welcome back, {user?.name || 'Vendor'} 👋
               </p>
             </div>
-          </div>
+          </button>
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
           >
             {theme === 'dark' ? <FaSun className="text-yellow-500" /> : <FaMoon className="text-gray-700" />}
           </button>
@@ -229,7 +237,7 @@ const VendorDashboard = () => {
           <div className="flex items-center justify-between gap-2 mb-4">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <h2 className="text-base sm:text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-1.5 sm:gap-2 min-w-0">
-                <FaQrcode className="text-red-500 flex-shrink-0" />
+                <FaQrcode className="text-gray-800 dark:text-white flex-shrink-0" />
                 <span className="truncate">Tables & QR Codes</span>
               </h2>
               {tables.length > 0 && (
@@ -251,7 +259,7 @@ const VendorDashboard = () => {
               )}
               <button
                 onClick={() => setShowAddTableModal(true)}
-                className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl lg:rounded-none font-semibold text-sm sm:text-base hover:shadow-lg transition-all whitespace-nowrap"
+                className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 rounded-xl lg:rounded-none font-semibold text-sm sm:text-base hover:shadow-lg transition-all whitespace-nowrap"
               >
                 <FaPlus />
                 <span className="sm:hidden">Add</span>
@@ -303,7 +311,7 @@ const VendorDashboard = () => {
               <button
                 onClick={() => handleDateFilterChange('')}
                 className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
-                  dateFilter === '' ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  dateFilter === '' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 All
@@ -311,7 +319,7 @@ const VendorDashboard = () => {
               <button
                 onClick={() => handleDateFilterChange(todayStr)}
                 className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
-                  dateFilter === todayStr ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  dateFilter === todayStr ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 Today
@@ -319,7 +327,7 @@ const VendorDashboard = () => {
               <button
                 onClick={() => handleDateFilterChange(yesterdayStr)}
                 className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
-                  dateFilter === yesterdayStr ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  dateFilter === yesterdayStr ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 Yesterday
@@ -331,7 +339,7 @@ const VendorDashboard = () => {
                   value={dateFilter}
                   max={todayStr}
                   onChange={(e) => handleDateFilterChange(e.target.value)}
-                  className="pl-7 pr-2 py-1.5 rounded-lg lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="pl-7 pr-2 py-1.5 rounded-lg lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
                 />
               </div>
             </div>
@@ -382,11 +390,13 @@ const VendorDashboard = () => {
                               <span
                                 className={`px-2 py-0.5 rounded-full lg:rounded-none text-xs font-semibold ${
                                   order.status === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-800'
+                                    ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
                                     : order.status === 'preparing'
-                                    ? 'bg-blue-100 text-blue-800'
+                                    ? 'bg-gray-300 text-gray-900 dark:bg-gray-500 dark:text-white'
                                     : order.status === 'ready'
-                                    ? 'bg-green-100 text-green-800'
+                                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                                    : order.status === 'declined'
+                                    ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
                                     : 'bg-gray-100 text-gray-800'
                                 }`}
                               >
@@ -406,12 +416,12 @@ const VendorDashboard = () => {
                             </p>
                           </div>
                           <div className="flex-shrink-0 w-14 sm:w-20 lg:w-24 text-right">
-                            <span className="font-semibold text-red-500 text-sm sm:text-base lg:text-lg">₹{order.total}</span>
+                            <span className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base lg:text-lg">₹{order.total}</span>
                           </div>
                           <div className="flex-shrink-0 w-14 sm:w-20 lg:w-24 text-right">
                             <button
                               onClick={() => setSelectedOrder(order)}
-                              className="text-xs px-3 py-1.5 rounded-lg lg:rounded-none bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-red-500 hover:text-white transition-colors"
+                              className="text-xs px-3 py-1.5 rounded-lg lg:rounded-none bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-900 dark:hover:bg-white hover:text-white dark:hover:text-gray-900 transition-colors"
                             >
                               View
                             </button>
@@ -525,9 +535,9 @@ const AddTableModal = ({ tables, onClose, onSaved }) => {
       >
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <FaQrcode className="text-red-500" /> Add Table
+            <FaQrcode className="text-gray-800 dark:text-white" /> Add Table
           </h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
             <FaTimes className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>
@@ -546,7 +556,7 @@ const AddTableModal = ({ tables, onClose, onSaved }) => {
               className={`w-full px-4 py-2.5 rounded-xl border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 ${
                 isDuplicate
                   ? 'border-red-400 focus:ring-red-400'
-                  : 'border-gray-200 dark:border-gray-700 focus:ring-red-500'
+                  : 'border-gray-200 dark:border-gray-700 focus:ring-gray-900 dark:focus:ring-white'
               }`}
             />
             {isDuplicate && (
@@ -556,7 +566,7 @@ const AddTableModal = ({ tables, onClose, onSaved }) => {
           <button
             type="submit"
             disabled={saving || isDuplicate || !trimmed}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
           >
             {saving ? <FaSpinner className="animate-spin" /> : <FaPlus />}
             Add Table
@@ -610,10 +620,13 @@ const DeleteTableModal = ({ table, deleting, onClose, onConfirm }) => (
 
 const OrderDetailsModal = ({ order, onClose }) => {
   const statusColor = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    preparing: 'bg-blue-100 text-blue-800',
-    ready: 'bg-green-100 text-green-800',
-    completed: 'bg-gray-100 text-gray-800',
+    pending: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
+    preparing: 'bg-gray-300 text-gray-900 dark:bg-gray-500 dark:text-white',
+    ready: 'bg-gray-900 text-white dark:bg-white dark:text-gray-900',
+    declined: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+    completed: order.status === 'declined'
+                                    ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                                    : 'bg-gray-100 text-gray-800',
   }[order.status] || 'bg-gray-100 text-gray-800';
 
   return (
@@ -632,10 +645,10 @@ const OrderDetailsModal = ({ order, onClose }) => {
       >
         <div className="sticky top-0 bg-white dark:bg-gray-800 flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2">
-            <FaReceipt className="text-red-500" />
+            <FaReceipt className="text-gray-800 dark:text-white" />
             <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">Order #{order.orderNumber}</h2>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
             <FaTimes className="text-gray-500 dark:text-gray-400" />
           </button>
         </div>
@@ -663,7 +676,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
           </div>
 
           {order.note && (
-            <div className="text-sm bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 rounded-lg p-2.5">
+            <div className="text-sm bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-gray-900 dark:border-white rounded-lg p-2.5">
               {order.note}
             </div>
           )}
@@ -683,7 +696,7 @@ const OrderDetailsModal = ({ order, onClose }) => {
             )}
             <div className="flex justify-between font-bold text-gray-800 dark:text-white text-base pt-1">
               <span>Total</span>
-              <span className="text-red-500">₹{order.total}</span>
+              <span className="text-gray-900 dark:text-white">₹{order.total}</span>
             </div>
           </div>
         </div>

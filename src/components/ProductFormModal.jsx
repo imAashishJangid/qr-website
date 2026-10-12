@@ -119,7 +119,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
           </div>
 
           <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-            <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-red-400 transition-colors">
+            <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-4 cursor-pointer hover:border-gray-500 transition-colors">
               {imagePreview ? (
                 <img src={imagePreview} alt="Preview" className="w-24 h-24 object-cover rounded-lg" />
               ) : (
@@ -136,7 +136,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                 value={form.name}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
                 placeholder="e.g. Paneer Tikka"
               />
             </div>
@@ -148,7 +148,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                 value={form.description}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
                 placeholder="Short description"
               />
             </div>
@@ -163,7 +163,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                   onChange={handleChange}
                   required
                   min="0"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
                 />
               </div>
               <div>
@@ -174,7 +174,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                   value={form.originalPrice}
                   onChange={handleChange}
                   min="0"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
                   placeholder="Optional"
                 />
               </div>
@@ -190,13 +190,13 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                     onChange={(e) => setNewCategory(e.target.value)}
                     placeholder="New category name"
                     autoFocus
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
                   />
                   <button
                     type="button"
                     onClick={handleAddCategory}
                     disabled={addingCategory}
-                    className="px-4 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 disabled:opacity-50"
+                    className="px-4 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold hover:bg-gray-700 dark:hover:bg-gray-200 disabled:opacity-50"
                   >
                     {addingCategory ? <FaSpinner className="animate-spin" /> : 'Add'}
                   </button>
@@ -214,7 +214,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                   <button
                     type="button"
                     onClick={() => setShowNewCategory(true)}
-                    className="inline-flex items-center gap-1.5 text-red-500 font-semibold text-sm hover:underline"
+                    className="inline-flex items-center gap-1.5 text-gray-900 dark:text-white font-semibold text-sm hover:underline"
                   >
                     <FaPlus className="text-xs" /> Add your first category
                   </button>
@@ -224,7 +224,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                   <button
                     type="button"
                     onClick={() => setCategoryDropdownOpen((v) => !v)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
                   >
                     <span className={selectedCategory ? '' : 'text-gray-400'}>
                       {selectedCategory ? `${selectedCategory.icon} ${selectedCategory.name}` : 'Select category'}
@@ -248,8 +248,8 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                             }}
                             className={`w-full flex items-center gap-2 px-4 py-1.5 text-left text-sm transition-colors ${
                               form.categoryId === c._id
-                                ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold'
-                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold'
+                                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                           >
                             <span>{c.icon}</span> {c.name}
@@ -261,7 +261,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                             setCategoryDropdownOpen(false);
                             setShowNewCategory(true);
                           }}
-                          className="w-full flex items-center gap-2 px-4 py-1.5 text-left text-sm font-semibold text-red-500 border-t border-gray-100 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          className="w-full flex items-center gap-2 px-4 py-1.5 text-left text-sm font-semibold text-gray-900 dark:text-white border-t border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
                           <FaPlus className="text-xs" /> Add another category
                         </button>
@@ -286,7 +286,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {saving ? <FaSpinner className="animate-spin" /> : isEdit ? 'Save Changes' : 'Add Product'}
             </button>

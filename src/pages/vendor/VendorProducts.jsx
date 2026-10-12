@@ -17,6 +17,7 @@ const VendorProducts = () => {
   const [showModal, setShowModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [vegFilter, setVegFilter] = useState('all');
 
   const fetchData = async () => {
     try {
@@ -77,6 +78,12 @@ const VendorProducts = () => {
     }
   };
 
+  const filteredProducts = products.filter((product) => {
+    if (vegFilter === 'veg') return product.isVeg;
+    if (vegFilter === 'nonveg') return !product.isVeg;
+    return true;
+  });
+
   return (
     <div>
       <header className="lg:hidden safe-top sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg">
@@ -87,7 +94,7 @@ const VendorProducts = () => {
           </div>
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold text-sm sm:text-base hover:shadow-lg transition-all flex-shrink-0"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 rounded-xl font-semibold text-sm sm:text-base hover:shadow-lg transition-all flex-shrink-0"
           >
             <FaPlus /> Add Product
           </button>
@@ -102,10 +109,30 @@ const VendorProducts = () => {
           </div>
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 rounded-xl font-semibold hover:shadow-lg transition-all"
           >
             <FaPlus /> Add Product
           </button>
+        </div>
+
+        <div className="inline-flex items-center gap-1 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-1.5 mb-5 sm:mb-6">
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'veg', label: 'Veg' },
+            { key: 'nonveg', label: 'Non-Veg' },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setVegFilter(key)}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                vegFilter === key
+                  ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
@@ -130,10 +157,16 @@ const VendorProducts = () => {
             <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400">No products yet</h3>
             <p className="text-gray-500 dark:text-gray-500 mt-2">Add your first product to build your menu.</p>
           </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-16">
+            <FaBoxOpen className="text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400">No {vegFilter === 'veg' ? 'veg' : 'non-veg'} products</h3>
+            <p className="text-gray-500 dark:text-gray-500 mt-2">Try a different filter.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
             <AnimatePresence>
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <motion.div
                   key={product._id}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -143,7 +176,7 @@ const VendorProducts = () => {
                 >
                   <div className="relative w-full pt-[110%] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
                     <img
-                      src={product.image || 'https://placehold.co/400x300/FF6B6B/FFFFFF?text=Food'}
+                      src={product.image || 'https://placehold.co/400x300/E5E7EB/111827?text=Food'}
                       alt={product.name}
                       className="absolute top-0 left-0 w-full h-full object-cover"
                     />
@@ -168,13 +201,13 @@ const VendorProducts = () => {
                         {product.description}
                       </p>
                     )}
-                    <p className="text-lg sm:text-xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent mt-2">
+                    <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mt-2">
                       ₹{product.price}
                     </p>
                     <div className="flex gap-2 mt-3">
                       <button
                         onClick={() => openEditModal(product)}
-                        className="flex items-center justify-center gap-1.5 flex-1 text-sm font-medium px-3 py-2 rounded-none bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                        className="flex items-center justify-center gap-1.5 flex-1 text-sm font-medium px-3 py-2 rounded-none bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                       >
                         <FaEdit /> Edit
                       </button>
