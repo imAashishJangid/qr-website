@@ -101,7 +101,7 @@ const VendorProducts = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-5 sm:py-8">
         <div className="hidden lg:flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-display font-bold text-gray-800 dark:text-white">Products</h1>
@@ -136,7 +136,7 @@ const VendorProducts = () => {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-none shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
                 <Skeleton className="w-full pt-[110%]" />
@@ -164,7 +164,7 @@ const VendorProducts = () => {
             <p className="text-gray-500 dark:text-gray-500 mt-2">Try a different filter.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-5">
             <AnimatePresence>
               {filteredProducts.map((product) => (
                 <motion.div
@@ -194,7 +194,7 @@ const VendorProducts = () => {
                     </span>
                   </div>
 
-                  <div className="p-4">
+                  <div className="p-2.5 sm:p-4">
                     <h3 className="font-semibold text-gray-800 dark:text-white leading-snug truncate">{product.name}</h3>
                     {product.description && (
                       <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
@@ -204,18 +204,22 @@ const VendorProducts = () => {
                     <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mt-2">
                       ₹{product.price}
                     </p>
-                    <div className="flex gap-2 mt-3">
+                    {/* Two equal columns that can never be wider than the card. On very
+                        narrow phones (<380px) the icons hide so the labels always fit. */}
+                    <div className="grid grid-cols-2 gap-1 sm:gap-2 mt-3">
                       <button
                         onClick={() => openEditModal(product)}
-                        className="flex items-center justify-center gap-1.5 flex-1 text-sm font-medium px-3 py-2 rounded-none bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        className="min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm font-medium px-1 sm:px-3 py-1.5 sm:py-2 rounded-none bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                       >
-                        <FaEdit /> Edit
+                        <FaEdit className="hidden min-[380px]:inline flex-shrink-0" />
+                        <span className="truncate">Edit</span>
                       </button>
                       <button
                         onClick={() => setDeleteTarget(product)}
-                        className="flex items-center justify-center gap-1.5 flex-1 text-sm font-medium px-3 py-2 rounded-none bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                        className="min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 text-[11px] sm:text-sm font-medium px-1 sm:px-3 py-1.5 sm:py-2 rounded-none bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                       >
-                        <FaTrash /> Delete
+                        <FaTrash className="hidden min-[380px]:inline flex-shrink-0" />
+                        <span className="truncate">Delete</span>
                       </button>
                     </div>
                   </div>
