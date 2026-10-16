@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaSpinner, FaImage, FaPlus, FaChevronDown } from 'react-icons/fa';
-import axios from '../lib/api';
+import axios, { notifyError } from '../lib/api';
 import toast from 'react-hot-toast';
 
 const fileToBase64 = (file) =>
@@ -18,7 +18,6 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
     name: product?.name || '',
     description: product?.description || '',
     price: product?.price || '',
-    originalPrice: product?.originalPrice || '',
     categoryId: product?.categoryId?._id || product?.categoryId || '',
     isVeg: product?.isVeg ?? true,
     isBestseller: product?.isBestseller ?? false,
@@ -56,7 +55,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
       setShowNewCategory(false);
       toast.success('Category added');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to add category');
+      notifyError(error, 'Failed to add category');
     } finally {
       setAddingCategory(false);
     }
@@ -74,7 +73,6 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
       const payload = {
         ...form,
         price: Number(form.price),
-        originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
         image: imageFile ? imagePreview : undefined,
       };
 
@@ -87,7 +85,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
       }
       onSaved();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save product');
+      notifyError(error, 'Failed to save product');
     } finally {
       setSaving(false);
     }
@@ -136,7 +134,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                 value={form.name}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 placeholder="e.g. Paneer Tikka"
               />
             </div>
@@ -148,36 +146,22 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                 value={form.description}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 placeholder="Short description"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Price (₹)</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={form.price}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Original Price</label>
-                <input
-                  type="number"
-                  name="originalPrice"
-                  value={form.originalPrice}
-                  onChange={handleChange}
-                  min="0"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
-                  placeholder="Optional"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Price (₹)</label>
+              <input
+                type="number"
+                name="price"
+                value={form.price}
+                onChange={handleChange}
+                required
+                min="0"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
+              />
             </div>
 
             <div>
@@ -190,13 +174,13 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                     onChange={(e) => setNewCategory(e.target.value)}
                     placeholder="New category name"
                     autoFocus
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                   />
                   <button
                     type="button"
                     onClick={handleAddCategory}
                     disabled={addingCategory}
-                    className="px-4 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold hover:bg-gray-700 dark:hover:bg-gray-200 disabled:opacity-50"
+                    className="px-4 rounded-xl bg-red-500 dark:bg-red-500 text-white dark:text-white font-semibold hover:bg-red-600 dark:hover:bg-red-600 disabled:opacity-50"
                   >
                     {addingCategory ? <FaSpinner className="animate-spin" /> : 'Add'}
                   </button>
@@ -224,7 +208,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
                   <button
                     type="button"
                     onClick={() => setCategoryDropdownOpen((v) => !v)}
-                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                   >
                     <span className={selectedCategory ? '' : 'text-gray-400'}>
                       {selectedCategory ? `${selectedCategory.icon} ${selectedCategory.name}` : 'Select category'}
@@ -286,7 +270,7 @@ const ProductFormModal = ({ product, categories, onCategoryCreated, onClose, onS
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {saving ? <FaSpinner className="animate-spin" /> : isEdit ? 'Save Changes' : 'Add Product'}
             </button>

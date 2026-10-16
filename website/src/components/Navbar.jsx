@@ -36,7 +36,7 @@ const Navbar = () => {
           ))}
           <button
             onClick={() => scrollTo('plans')}
-            className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-red-500/30 transition-all"
+            className="bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-red-500/30 transition-all"
           >
             Get Started
           </button>
@@ -64,7 +64,7 @@ const Navbar = () => {
           ))}
           <button
             onClick={() => scrollTo('plans')}
-            className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-sm font-semibold px-5 py-3 rounded-xl mt-1"
+            className="bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-semibold px-5 py-3 rounded-xl mt-1"
           >
             Get Started
           </button>

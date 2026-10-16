@@ -6,6 +6,7 @@ import { useSocket } from '../../context/SocketContext';
 import { useCart } from '../../context/CartContext';
 import api from '../../lib/api';
 import { getCustomerId } from '../../lib/customerId';
+import { storedMenuPath } from '../../lib/scanSession';
 import { playNotificationChime } from '../../lib/notificationSound';
 import { FaCheckCircle, FaClock, FaUtensils, FaSpinner, FaHome, FaReceipt, FaCommentDots, FaTimesCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -22,7 +23,7 @@ const STATUS_LABELS = {
 const STATUS_BADGE_CLASSES = {
   pending: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
   preparing: 'bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-100',
-  ready: 'bg-gray-900 text-white dark:bg-white dark:text-gray-900',
+  ready: 'bg-red-500 text-white dark:bg-red-500 dark:text-white',
   completed: 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
   declined: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
 };
@@ -186,9 +187,7 @@ const OrderStatusPage = () => {
 
   // Route "Home" back to the menu the customer scanned into, not the generic landing page
   const backToMenu = () => {
-    const vendorId = localStorage.getItem('vendorId');
-    const tableId = localStorage.getItem('tableId');
-    navigate(vendorId && tableId ? `/menu/${vendorId}/${tableId}` : '/');
+    navigate(storedMenuPath() || '/');
   };
 
   return (
@@ -218,7 +217,7 @@ const OrderStatusPage = () => {
               onClick={() => setActiveTab(tab.key)}
               className={`px-5 sm:px-6 py-2 text-sm sm:text-base font-semibold rounded-xl transition-all duration-300 ${
                 activeTab === tab.key
-                  ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                  ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
@@ -287,7 +286,7 @@ const OrderStatusPage = () => {
                       </p>
                     )}
                     {order.note && (
-                      <div className="flex items-start gap-2 text-xs bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-gray-900 dark:border-white rounded-lg lg:rounded-none p-2 mt-2">
+                      <div className="flex items-start gap-2 text-xs bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-red-500 dark:border-red-500 rounded-lg lg:rounded-none p-2 mt-2">
                         <FaCommentDots className="mt-0.5 flex-shrink-0" />
                         <span className="line-clamp-2">{order.note}</span>
                       </div>
@@ -327,7 +326,7 @@ const OrderStatusPage = () => {
             <p className="text-gray-500 dark:text-gray-400">No active orders right now.</p>
             <button
               onClick={backToMenu}
-              className="mt-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-200 px-6 py-2.5 rounded-full font-semibold hover:shadow-lg transition-all"
+              className="mt-4 bg-red-500 dark:bg-red-500 text-white dark:text-white hover:bg-red-600 dark:hover:bg-red-600 px-6 py-2.5 rounded-full font-semibold hover:shadow-lg transition-all"
             >
               Browse Menu
             </button>
@@ -364,7 +363,7 @@ const OrderStatusPage = () => {
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="mt-5 lg:mt-4 p-4 lg:p-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl lg:rounded-none"
+                        className="mt-5 lg:mt-4 p-4 lg:p-3 bg-red-500 dark:bg-red-500 text-white dark:text-white rounded-xl lg:rounded-none"
                       >
                         <p className="font-bold text-base sm:text-lg lg:text-sm">Your order is ready for pickup.</p>
                         <p className="text-sm lg:text-xs opacity-80 mt-1">Please collect it from the counter.</p>
@@ -395,7 +394,7 @@ const OrderStatusPage = () => {
                                 initial={{ width: 0 }}
                                 animate={{ width: `${getProgress(order.status)}%` }}
                                 transition={{ duration: 0.5 }}
-                                className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gray-900 dark:bg-white"
+                                className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-red-500 dark:bg-red-500"
                               />
                             </div>
                           </div>
@@ -434,7 +433,7 @@ const OrderStatusPage = () => {
                     </div>
 
                     {order.note && (
-                      <div className="mt-3 lg:mt-2 flex items-start gap-2 text-sm lg:text-xs bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-gray-900 dark:border-white rounded-lg lg:rounded-none p-2.5">
+                      <div className="mt-3 lg:mt-2 flex items-start gap-2 text-sm lg:text-xs bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-red-500 dark:border-red-500 rounded-lg lg:rounded-none p-2.5">
                         <FaCommentDots className="mt-0.5 flex-shrink-0" />
                         <span>{order.note}</span>
                       </div>

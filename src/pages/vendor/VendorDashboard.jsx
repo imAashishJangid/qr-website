@@ -4,31 +4,24 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { motion } from 'framer-motion';
 import {
-  FaUsers,
   FaUtensils,
   FaMoneyBillWave,
   FaBoxOpen,
   FaMoon,
   FaSun,
-  FaSpinner,
   FaClock,
-  FaQrcode,
-  FaPlus,
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
   FaCalendarAlt,
   FaReceipt,
-  FaTrash,
-  FaExclamationTriangle,
-  FaEye,
-  FaEyeSlash,
 } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
-import axios from '../../lib/api';
+import axios, { notifyError } from '../../lib/api';
 import toast from 'react-hot-toast';
 import Skeleton from '../../components/Skeleton';
 import { playNotificationChime } from '../../lib/notificationSound';
+import QrCodesSection from '../../components/QrCodesSection';
 
 const VendorDashboard = () => {
   const { user } = useAuth();
@@ -45,11 +38,7 @@ const VendorDashboard = () => {
     pendingOrders: 0,
   });
   const [recentOrders, setRecentOrders] = useState([]);
-  const [tables, setTables] = useState([]);
-  const [showAddTableModal, setShowAddTableModal] = useState(false);
-  const [showTables, setShowTables] = useState(false);
-  const [deleteTableTarget, setDeleteTableTarget] = useState(null);
-  const [deletingTable, setDeletingTable] = useState(false);
+  const [qrData, setQrData] = useState({ qrCodes: [], usage: null });
   const [loading, setLoading] = useState(true);
 
   const [dateFilter, setDateFilter] = useState('');
@@ -70,26 +59,28 @@ const VendorDashboard = () => {
       setRecentOrders(data.orders || []);
       setOrdersTotalPages(data.totalPages || 1);
     } catch (error) {
-      toast.error('Failed to load recent orders');
+      notifyError(error, 'Failed to load recent orders');
     } finally {
       setOrdersLoading(false);
     }
   };
 
   const fetchDashboardData = async () => {
+    setLoading(true);
+    // Recent orders load alongside stats and tables instead of waiting for them.
+    const recentOrdersRequest = fetchRecentOrders(1, '');
     try {
-      setLoading(true);
       const [statsRes, tablesRes] = await Promise.all([
         axios.get('/api/vendor/stats'),
         axios.get('/api/vendor/tables'),
       ]);
 
       setStats(statsRes.data);
-      setTables(tablesRes.data);
-      await fetchRecentOrders(1, '');
+      setQrData(tablesRes.data);
     } catch (error) {
-      toast.error('Failed to load dashboard data');
+      notifyError(error, 'Failed to load dashboard data');
     } finally {
+      await recentOrdersRequest;
       setLoading(false);
     }
   };
@@ -108,7 +99,7 @@ const VendorDashboard = () => {
   useEffect(() => {
     if (!socket || !user?.id) return;
 
-    socket.emit('join-vendor', user.id);
+    socket.emit('join-vendor', localStorage.getItem('vendorToken'));
 
     const refreshStats = () => {
       axios.get('/api/vendor/stats').then(({ data }) => setStats(data)).catch(() => {});
@@ -165,13 +156,11 @@ const VendorDashboard = () => {
     return `${names.slice(0, 2).join(', ')} +${names.length - 2} more`;
   };
 
-  const menuLink = (table) => `${import.meta.env.VITE_FRONTEND_URL || window.location.origin}/menu/${user?.id}/${table}`;
-
   const statCards = [
-    { title: "Today's Orders", value: stats.todayOrders, icon: <FaUtensils className="text-2xl lg:text-3xl" />, color: 'bg-gray-900 dark:bg-gray-700' },
-    { title: "Today's Revenue", value: `₹${stats.todayRevenue}`, icon: <FaMoneyBillWave className="text-2xl lg:text-3xl" />, color: 'bg-gray-800 dark:bg-gray-600' },
-    { title: 'Total Products', value: stats.totalProducts, icon: <FaBoxOpen className="text-2xl lg:text-3xl" />, color: 'bg-gray-600 dark:bg-gray-500' },
-    { title: 'Pending Orders', value: stats.pendingOrders, icon: <FaClock className="text-2xl lg:text-3xl" />, color: 'bg-gray-500 dark:bg-gray-400' },
+    { title: "Today's Orders", value: stats.todayOrders, icon: <FaUtensils className="text-2xl lg:text-3xl" />, color: 'bg-red-500' },
+    { title: "Today's Revenue", value: `₹${stats.todayRevenue}`, icon: <FaMoneyBillWave className="text-2xl lg:text-3xl" />, color: 'bg-red-500' },
+    { title: 'Total Products', value: stats.totalProducts, icon: <FaBoxOpen className="text-2xl lg:text-3xl" />, color: 'bg-red-500' },
+    { title: 'Pending Orders', value: stats.pendingOrders, icon: <FaClock className="text-2xl lg:text-3xl" />, color: 'bg-red-500' },
   ];
 
   return (
@@ -183,8 +172,8 @@ const VendorDashboard = () => {
             onClick={() => navigate('/vendor/dashboard')}
             className="flex items-center gap-2.5 min-w-0"
           >
-            <div className="w-9 h-9 flex items-center justify-center text-base bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white rounded-xl shadow-md shadow-black/20 flex-shrink-0">
-              🍽️
+            <div className="w-9 h-9 overflow-hidden rounded-xl shadow-md shadow-red-500/30 flex-shrink-0">
+              <img src="/applogo.jpeg" alt="HiaQr" className="w-full h-full object-cover" />
             </div>
             <div className="min-w-0 text-left">
               <h1 className="text-lg sm:text-2xl font-display font-bold text-gray-800 dark:text-white truncate">
@@ -199,7 +188,7 @@ const VendorDashboard = () => {
             onClick={toggleTheme}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
           >
-            {theme === 'dark' ? <FaSun className="text-yellow-500" /> : <FaMoon className="text-gray-700" />}
+            {theme === 'dark' ? <FaSun className="text-red-400" /> : <FaMoon className="text-gray-700" />}
           </button>
         </div>
       </header>
@@ -227,75 +216,7 @@ const VendorDashboard = () => {
           ))}
         </div>
 
-        {/* Tables & QR Codes */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-6 sm:mt-8 bg-white dark:bg-gray-800 rounded-2xl lg:rounded-none shadow-lg p-4 sm:p-6"
-        >
-          <div className="flex items-center justify-between gap-2 mb-4">
-            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-              <h2 className="text-base sm:text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-1.5 sm:gap-2 min-w-0">
-                <FaQrcode className="text-gray-800 dark:text-white flex-shrink-0" />
-                <span className="truncate">Tables & QR Codes</span>
-              </h2>
-              {tables.length > 0 && (
-                <span className="hidden sm:inline text-xs sm:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  ({tables.length} table{tables.length === 1 ? '' : 's'} added)
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-              {tables.length > 0 && (
-                <button
-                  onClick={() => setShowTables((prev) => !prev)}
-                  className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white rounded-xl lg:rounded-none font-semibold text-sm sm:text-base hover:bg-gray-200 dark:hover:bg-gray-600 transition-all whitespace-nowrap"
-                >
-                  {showTables ? <FaEyeSlash /> : <FaEye />}
-                  <span className="sm:hidden">{showTables ? 'Hide' : 'Show'}</span>
-                  <span className="hidden sm:inline">{showTables ? 'Hide Tables' : 'Show Tables'}</span>
-                </button>
-              )}
-              <button
-                onClick={() => setShowAddTableModal(true)}
-                className="flex items-center gap-1.5 px-2.5 sm:px-4 py-2 bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 rounded-xl lg:rounded-none font-semibold text-sm sm:text-base hover:shadow-lg transition-all whitespace-nowrap"
-              >
-                <FaPlus />
-                <span className="sm:hidden">Add</span>
-                <span className="hidden sm:inline">Add Table</span>
-              </button>
-            </div>
-          </div>
-
-          {tables.length === 0 ? (
-            <p className="text-center text-gray-500 dark:text-gray-400 py-6">
-              No tables yet. Add a table number to generate its QR code.
-            </p>
-          ) : !showTables ? null : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tables.map((table) => (
-                <div
-                  key={table}
-                  className="border border-gray-100 dark:border-gray-700 rounded-xl lg:rounded-none p-4 flex flex-col items-center gap-2"
-                >
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(menuLink(table))}`}
-                    alt={`QR code for table ${table}`}
-                    className="w-44 h-44 sm:w-56 sm:h-56 rounded-lg lg:rounded-none bg-white p-1"
-                  />
-                  <p className="font-semibold text-gray-800 dark:text-white">Table {table}</p>
-                  <button
-                    onClick={() => setDeleteTableTarget(table)}
-                    className="flex items-center gap-1.5 mt-1 px-3 py-1 rounded-lg lg:rounded-none bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors text-xs font-medium"
-                  >
-                    <FaTrash className="text-xs" /> Delete
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+        <QrCodesSection data={qrData} onChange={setQrData} loading={loading} />
 
         {/* Recent Orders */}
         <motion.div
@@ -311,7 +232,7 @@ const VendorDashboard = () => {
               <button
                 onClick={() => handleDateFilterChange('')}
                 className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
-                  dateFilter === '' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  dateFilter === '' ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 All
@@ -319,7 +240,7 @@ const VendorDashboard = () => {
               <button
                 onClick={() => handleDateFilterChange(todayStr)}
                 className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
-                  dateFilter === todayStr ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  dateFilter === todayStr ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 Today
@@ -327,7 +248,7 @@ const VendorDashboard = () => {
               <button
                 onClick={() => handleDateFilterChange(yesterdayStr)}
                 className={`px-3 py-1.5 rounded-lg lg:rounded-none text-xs sm:text-sm font-medium transition-colors ${
-                  dateFilter === yesterdayStr ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  dateFilter === yesterdayStr ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                 }`}
               >
                 Yesterday
@@ -339,7 +260,7 @@ const VendorDashboard = () => {
                   value={dateFilter}
                   max={todayStr}
                   onChange={(e) => handleDateFilterChange(e.target.value)}
-                  className="pl-7 pr-2 py-1.5 rounded-lg lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                  className="pl-7 pr-2 py-1.5 rounded-lg lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 />
               </div>
             </div>
@@ -394,7 +315,7 @@ const VendorDashboard = () => {
                                     : order.status === 'preparing'
                                     ? 'bg-gray-300 text-gray-900 dark:bg-gray-500 dark:text-white'
                                     : order.status === 'ready'
-                                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                                    ? 'bg-red-500 text-white dark:bg-red-500 dark:text-white'
                                     : order.status === 'declined'
                                     ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
                                     : 'bg-gray-100 text-gray-800'
@@ -462,167 +383,15 @@ const VendorDashboard = () => {
       {selectedOrder && (
         <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
       )}
-      {showAddTableModal && (
-        <AddTableModal
-          tables={tables}
-          onClose={() => setShowAddTableModal(false)}
-          onSaved={(updatedTables) => {
-            setTables(updatedTables);
-            setShowAddTableModal(false);
-          }}
-        />
-      )}
-      {deleteTableTarget && (
-        <DeleteTableModal
-          table={deleteTableTarget}
-          deleting={deletingTable}
-          onClose={() => setDeleteTableTarget(null)}
-          onConfirm={async () => {
-            setDeletingTable(true);
-            try {
-              const { data } = await axios.delete(`/api/vendor/tables/${encodeURIComponent(deleteTableTarget)}`);
-              setTables(data);
-              toast.success(`Table ${deleteTableTarget} deleted`);
-              setDeleteTableTarget(null);
-            } catch (error) {
-              toast.error(error.response?.data?.message || 'Failed to delete table');
-            } finally {
-              setDeletingTable(false);
-            }
-          }}
-        />
-      )}
     </div>
   );
 };
-
-const AddTableModal = ({ tables, onClose, onSaved }) => {
-  const [number, setNumber] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  const trimmed = number.trim();
-  const isDuplicate = trimmed !== '' && tables.some((t) => t.trim().toLowerCase() === trimmed.toLowerCase());
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!trimmed || isDuplicate) return;
-
-    setSaving(true);
-    try {
-      const { data } = await axios.post('/api/vendor/tables', { number: trimmed });
-      toast.success(`Table ${trimmed} added!`);
-      onSaved(data);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to add table');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ y: 40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm"
-      >
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-            <FaQrcode className="text-gray-800 dark:text-white" /> Add Table
-          </h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
-            <FaTimes className="text-gray-500 dark:text-gray-400" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Table Number
-            </label>
-            <input
-              type="text"
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              placeholder="e.g. 5"
-              autoFocus
-              className={`w-full px-4 py-2.5 rounded-xl border bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 ${
-                isDuplicate
-                  ? 'border-red-400 focus:ring-red-400'
-                  : 'border-gray-200 dark:border-gray-700 focus:ring-gray-900 dark:focus:ring-white'
-              }`}
-            />
-            {isDuplicate && (
-              <p className="text-xs text-red-500 mt-1.5">Table {trimmed} is already added</p>
-            )}
-          </div>
-          <button
-            type="submit"
-            disabled={saving || isDuplicate || !trimmed}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
-          >
-            {saving ? <FaSpinner className="animate-spin" /> : <FaPlus />}
-            Add Table
-          </button>
-        </form>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-const DeleteTableModal = ({ table, deleting, onClose, onConfirm }) => (
-  <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center"
-    onClick={() => !deleting && onClose()}
-  >
-    <motion.div
-      initial={{ y: 40, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      onClick={(e) => e.stopPropagation()}
-      className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm p-6 text-center"
-    >
-      <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/30 text-red-500 flex items-center justify-center mx-auto mb-4">
-        <FaExclamationTriangle className="text-2xl" />
-      </div>
-      <h2 className="text-lg font-bold text-gray-800 dark:text-white">Delete table?</h2>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-        Table "{table}" and its QR code will be removed. This can't be undone.
-      </p>
-      <div className="flex gap-3 mt-6">
-        <button
-          onClick={onClose}
-          disabled={deleting}
-          className="flex-1 py-2.5 rounded-xl font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={deleting}
-          className="flex-1 py-2.5 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center"
-        >
-          {deleting ? <FaSpinner className="animate-spin" /> : 'Delete'}
-        </button>
-      </div>
-    </motion.div>
-  </motion.div>
-);
 
 const OrderDetailsModal = ({ order, onClose }) => {
   const statusColor = {
     pending: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200',
     preparing: 'bg-gray-300 text-gray-900 dark:bg-gray-500 dark:text-white',
-    ready: 'bg-gray-900 text-white dark:bg-white dark:text-gray-900',
+    ready: 'bg-red-500 text-white dark:bg-red-500 dark:text-white',
     declined: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     completed: order.status === 'declined'
                                     ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'
@@ -676,19 +445,19 @@ const OrderDetailsModal = ({ order, onClose }) => {
           </div>
 
           {order.note && (
-            <div className="text-sm bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-gray-900 dark:border-white rounded-lg p-2.5">
+            <div className="text-sm bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-red-500 dark:border-red-500 rounded-lg p-2.5">
               {order.note}
             </div>
           )}
 
           <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-1.5 text-sm">
-            {order.subtotal != null && (
+            {order.gst > 0 && (
               <div className="flex justify-between text-gray-600 dark:text-gray-300">
                 <span>Subtotal</span>
                 <span>₹{order.subtotal}</span>
               </div>
             )}
-            {order.gst != null && (
+            {order.gst > 0 && (
               <div className="flex justify-between text-gray-600 dark:text-gray-300">
                 <span>GST</span>
                 <span>₹{order.gst}</span>

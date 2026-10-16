@@ -1,10 +1,11 @@
 // frontend/src/pages/customer/MenuPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import axios from '../../lib/api';
 import { getCustomerId } from '../../lib/customerId';
+import { getScanSession, saveScanSession } from '../../lib/scanSession';
 import { useCart } from '../../context/CartContext';
 import { useTheme } from '../../context/ThemeContext';
 import { 
@@ -25,9 +26,19 @@ import {
 import toast from 'react-hot-toast';
 import QuickOrderModal from '../../components/QuickOrderModal';
 import Skeleton from '../../components/Skeleton';
+import ProductImage from '../../components/ProductImage';
+
+const retryUnlessNotFound = (failureCount, error) => error?.response?.status !== 404 && failureCount < 1;
 
 const MenuPage = () => {
   const { vendorId, tableId } = useParams();
+  const [searchParams] = useSearchParams();
+  // The scanned QR code's token. Coming back from the cart/order page without it in the URL
+  // reuses the one saved for this same table.
+  const qrToken = searchParams.get('qr') || (() => {
+    const saved = getScanSession();
+    return saved.vendorId === vendorId && saved.tableId === tableId ? saved.qrToken : '';
+  })();
   const navigate = useNavigate();
   const customerId = getCustomerId();
   const { theme, toggleTheme } = useTheme();
@@ -98,30 +109,29 @@ const MenuPage = () => {
   }, [showSearch]);
 
   useEffect(() => {
-    if (vendorId) {
-      localStorage.setItem('vendorId', vendorId);
-    }
-    if (tableId) {
-      localStorage.setItem('tableId', tableId);
-    }
-  }, [vendorId, tableId]);
+    if (vendorId && tableId) saveScanSession({ vendorId, tableId, qrToken });
+  }, [vendorId, tableId, qrToken]);
 
   // Fetch menu items
   const { data: menuData, isLoading, error } = useQuery({
-    queryKey: ['menu', vendorId, tableId],
+    queryKey: ['menu', vendorId, tableId, qrToken],
     enabled: !!vendorId,
+    retry: retryUnlessNotFound,
     queryFn: async () => {
-      const { data } = await axios.get(`/api/menu/${vendorId}/${tableId}`);
+      const { data } = await axios.get(`/api/menu/${vendorId}/${encodeURIComponent(tableId)}`, { params: { qr: qrToken || undefined } });
       return data;
     },
   });
+  // An unknown or deactivated vendor: this QR code no longer works, so retrying won't help.
+  const vendorNotFound = error?.response?.status === 404;
 
   // Fetch categories
   const { data: categories } = useQuery({
-    queryKey: ['categories', vendorId],
+    queryKey: ['categories', vendorId, tableId, qrToken],
     enabled: !!vendorId,
+    retry: retryUnlessNotFound,
     queryFn: async () => {
-      const { data } = await axios.get(`/api/menu/${vendorId}/categories`);
+      const { data } = await axios.get(`/api/menu/${vendorId}/categories`, { params: { table: tableId, qr: qrToken || undefined } });
       return data;
     },
   });
@@ -183,7 +193,8 @@ const MenuPage = () => {
     enabled: !!vendorId && hasActiveFilters,
     keepPreviousData: true,
     queryFn: async () => {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ table: tableId });
+      if (qrToken) params.set('qr', qrToken);
       if (debouncedSearch) params.set('q', debouncedSearch);
       if (selectedCategory !== 'all') params.set('category', selectedCategory);
       if (priceRange.min) params.set('minPrice', priceRange.min);
@@ -263,13 +274,13 @@ const MenuPage = () => {
               <motion.div
                 whileHover={{ rotate: 180, scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="text-2xl sm:text-3xl bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white p-1.5 sm:p-2 rounded-xl shadow-lg shadow-black/20"
+                className="w-10 h-10 sm:w-12 sm:h-12 overflow-hidden rounded-xl shadow-lg shadow-red-500/30"
               >
-                🍽️
+                <img src="/applogo.jpeg" alt="HiaQr" className="w-full h-full object-cover" />
               </motion.div>
               <div>
                 <h1 className="text-base sm:text-xl font-display font-bold text-gray-900 dark:text-white">
-                  Smart QR Food
+                  HiaQr
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
                   <FaClock className="text-gray-400 text-[10px]" />
@@ -286,7 +297,7 @@ const MenuPage = () => {
                 onClick={toggleSearch}
                 className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
                   showSearch
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                    ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30'
                     : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white'
                 }`}
                 aria-label="Toggle search"
@@ -301,7 +312,7 @@ const MenuPage = () => {
                 onClick={toggleFilters}
                 className={`relative p-2 rounded-full transition-all duration-300 hover:scale-110 ${
                   showFilters
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                    ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30'
                     : 'hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-white'
                 }`}
                 aria-label="Toggle filters"
@@ -321,7 +332,7 @@ const MenuPage = () => {
                 aria-label="Toggle theme"
               >
                 {theme === 'dark' ? (
-                  <FaSun className="text-yellow-500 text-base sm:text-xl" />
+                  <FaSun className="text-red-400 text-base sm:text-xl" />
                 ) : (
                   <FaMoon className="text-gray-700 text-base sm:text-xl" />
                 )}
@@ -342,7 +353,7 @@ const MenuPage = () => {
                       initial={{ scale: 0 }}
                       animate={{ scale: [1, 1.4, 1] }}
                       transition={{ repeat: Infinity, duration: 1.6 }}
-                      className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-gray-900 dark:bg-white ring-2 ring-white dark:ring-gray-800 shadow"
+                      className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 dark:bg-red-500 ring-2 ring-white dark:ring-gray-800 shadow"
                     />
                   )}
                 </button>
@@ -360,7 +371,7 @@ const MenuPage = () => {
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute -top-2 -right-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] sm:text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-lg shadow-black/30"
+                      className="absolute -top-2 -right-2 bg-red-500 dark:bg-red-500 text-white dark:text-white text-[10px] sm:text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 shadow-lg shadow-red-500/30"
                     >
                       {totalItems}
                     </motion.span>
@@ -391,7 +402,7 @@ const MenuPage = () => {
                       placeholder="Search for delicious food..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-11 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 lg:shadow-xl text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/20 focus:border-gray-900 dark:focus:border-gray-300 transition-all duration-300 backdrop-blur-sm"
+                      className="w-full pl-11 pr-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 lg:shadow-xl text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 dark:focus:ring-white/20 focus:border-red-500 dark:focus:border-gray-300 transition-all duration-300 backdrop-blur-sm"
                     />
                     {searchTerm && (
                       <button
@@ -425,7 +436,7 @@ const MenuPage = () => {
                         placeholder="Min ₹"
                         value={priceRange.min}
                         onChange={(e) => setPriceRange((prev) => ({ ...prev, min: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/20 focus:border-gray-900 dark:focus:border-gray-300"
+                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 dark:focus:ring-white/20 focus:border-red-500 dark:focus:border-gray-300"
                       />
                       <span className="text-gray-400 text-sm">to</span>
                       <input
@@ -434,7 +445,7 @@ const MenuPage = () => {
                         placeholder="Max ₹"
                         value={priceRange.max}
                         onChange={(e) => setPriceRange((prev) => ({ ...prev, max: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-gray-900/10 dark:focus:ring-white/20 focus:border-gray-900 dark:focus:border-gray-300"
+                        className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-4 focus:ring-red-500/20 dark:focus:ring-white/20 focus:border-red-500 dark:focus:border-gray-300"
                       />
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -449,7 +460,7 @@ const MenuPage = () => {
                           onClick={() => applyPricePreset(preset.min, preset.max)}
                           className={`px-3 py-1.5 text-xs font-medium rounded-full border-2 transition-all ${
                             priceRange.min === preset.min && priceRange.max === preset.max
-                              ? 'bg-gray-900 border-gray-900 text-white dark:bg-white dark:border-white dark:text-gray-900'
+                              ? 'bg-red-500 border-red-500 text-white dark:bg-red-500 dark:border-red-500 dark:text-white'
                               : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600'
                           }`}
                         >
@@ -459,7 +470,7 @@ const MenuPage = () => {
                       {(priceRange.min || priceRange.max || selectedCategory !== 'all' || searchTerm) && (
                         <button
                           onClick={clearFilters}
-                          className="px-3 py-1.5 text-xs font-medium rounded-full border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-300 hover:border-gray-900 hover:text-gray-900 dark:hover:border-white dark:hover:text-white transition-all"
+                          className="px-3 py-1.5 text-xs font-medium rounded-full border-2 border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-300 hover:border-red-500 hover:text-gray-900 dark:hover:border-white dark:hover:text-white transition-all"
                         >
                           Clear All ✕
                         </button>
@@ -495,7 +506,7 @@ const MenuPage = () => {
                 onClick={() => setSelectedCategory('all')}
                 className={`flex-shrink-0 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 whitespace-nowrap ${
                   selectedCategory === 'all'
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20 scale-105'
+                    ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30 scale-105'
                     : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 hover:scale-105'
                 }`}
               >
@@ -510,7 +521,7 @@ const MenuPage = () => {
                   onClick={() => setSelectedCategory(category._id)}
                   className={`flex-shrink-0 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-full transition-all duration-300 whitespace-nowrap ${
                     selectedCategory === category._id
-                      ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20 scale-105'
+                      ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30 scale-105'
                       : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 hover:scale-105'
                   }`}
                 >
@@ -539,7 +550,7 @@ const MenuPage = () => {
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-none shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
-                <Skeleton className="w-full pt-[75%] sm:pt-[66.67%]" />
+                <Skeleton className="w-full aspect-[4/3]" />
                 <div className="p-3 sm:p-4 space-y-2">
                   <Skeleton className="h-4 w-3/4 rounded" />
                   <Skeleton className="h-3 w-full rounded" />
@@ -553,6 +564,16 @@ const MenuPage = () => {
               </div>
             ))}
           </div>
+        ) : vendorNotFound ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🏪</div>
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
+              {error.response?.data?.message || 'Vendor not found.'}
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">
+              This QR code is no longer active.
+            </p>
+          </div>
         ) : error ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">😢</div>
@@ -564,7 +585,7 @@ const MenuPage = () => {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-6 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-gray-700 dark:hover:bg-gray-200 transition-colors"
+              className="mt-4 px-6 py-2 bg-red-500 dark:bg-red-500 text-white dark:text-white rounded-xl hover:bg-red-600 dark:hover:bg-red-600 transition-colors"
             >
               Retry
             </button>
@@ -616,15 +637,12 @@ const MenuPage = () => {
                     whileHover={{ y: -4 }}
                   >
                     {/* Image Container */}
-                    <div className="relative w-full pt-[75%] sm:pt-[66.67%] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
-                      <img
-                        src={item.image || 'https://placehold.co/400x300/E5E7EB/111827?text=Food'}
+                    <div className="relative w-full">
+                      <ProductImage
+                        src={item.image}
                         alt={item.name}
-                        className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.target.src = 'https://placehold.co/400x300/E5E7EB/111827?text=Food';
-                        }}
+                        className="w-full aspect-[4/3]"
+                        imgClassName="transition-transform duration-500 group-hover:scale-105"
                       />
                       {/* Gradient Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -635,7 +653,7 @@ const MenuPage = () => {
                           <motion.span
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
-                            className="bg-gray-900/90 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-none shadow-lg flex items-center gap-1"
+                            className="bg-red-500/90 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-none shadow-lg flex items-center gap-1"
                           >
                             <FaStar className="text-[8px] sm:text-[10px]" /> Bestseller
                           </motion.span>
@@ -684,7 +702,7 @@ const MenuPage = () => {
                         <h3 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white line-clamp-1 flex-1">
                           {item.name}
                         </h3>
-                        {item.rating && (
+                        {item.rating > 0 && (
                           <span className="flex items-center gap-0.5 text-xs text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-none flex-shrink-0">
                             <FaStar className="text-[10px]" /> {item.rating}
                           </span>
@@ -700,11 +718,6 @@ const MenuPage = () => {
                           <span className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                             ₹{item.price}
                           </span>
-                          {item.originalPrice && (
-                            <span className="text-xs text-gray-400 line-through ml-1 sm:ml-2">
-                              ₹{item.originalPrice}
-                            </span>
-                          )}
                         </div>
 
                         {/* Quantity Controls */}
@@ -736,7 +749,7 @@ const MenuPage = () => {
                         disabled={!quantities[item._id]}
                         className={`w-full mt-3 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-none transition-all duration-300 ${
                           quantities[item._id]
-                            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20 hover:bg-gray-700 dark:hover:bg-gray-200 hover:scale-[1.02]'
+                            ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30 hover:bg-red-600 dark:hover:bg-red-600 hover:scale-[1.02]'
                             : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                         }`}
                       >
@@ -754,7 +767,7 @@ const MenuPage = () => {
                       <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setQuickOrderItem(item)}
-                        className="w-full mt-2 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-none border-2 border-gray-900 dark:border-white text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300"
+                        className="w-full mt-2 font-semibold py-2 sm:py-2.5 text-sm sm:text-base rounded-none border-2 border-red-500 dark:border-red-500 text-red-500 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300"
                       >
                         Order Now
                       </motion.button>
@@ -772,6 +785,7 @@ const MenuPage = () => {
           item={quickOrderItem}
           vendorId={vendorId}
           tableId={tableId}
+          qrToken={qrToken}
           onClose={() => setQuickOrderItem(null)}
         />
       )}
@@ -784,7 +798,7 @@ const MenuPage = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={scrollToTop}
-            className={`fixed right-4 sm:right-6 z-50 bg-gray-900 dark:bg-white text-white dark:text-gray-900 p-3 sm:p-4 rounded-full shadow-2xl shadow-black/30 hover:bg-gray-700 dark:hover:bg-gray-200 transition-all duration-300 hover:scale-110 ${
+            className={`fixed right-4 sm:right-6 z-50 bg-red-500 text-white p-3 sm:p-4 rounded-full shadow-2xl shadow-red-500/30 hover:bg-red-600 transition-all duration-300 hover:scale-110 ${
               totalItems > 0 ? 'bottom-24' : 'bottom-6'
             }`}
             aria-label="Scroll to top"
@@ -805,7 +819,7 @@ const MenuPage = () => {
           >
             <button
               onClick={() => navigate('/cart')}
-              className="pointer-events-auto w-full max-w-md bg-gray-900 dark:bg-white text-white dark:text-gray-900 pl-5 pr-4 py-3 rounded-full shadow-2xl shadow-black/40 hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors flex items-center justify-between gap-3"
+              className="pointer-events-auto w-full max-w-md bg-red-500 dark:bg-red-500 text-white dark:text-white pl-5 pr-4 py-3 rounded-full shadow-2xl shadow-red-500/30 hover:bg-red-600 dark:hover:bg-red-600 transition-colors flex items-center justify-between gap-3"
             >
               <span className="flex items-center gap-3 min-w-0">
                 <FaShoppingCart className="text-lg flex-shrink-0" />

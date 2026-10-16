@@ -21,9 +21,10 @@ import {
   FaDrumstickBite,
 } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
-import axios from '../../lib/api';
+import axios, { notifyError } from '../../lib/api';
 import toast from 'react-hot-toast';
 import Skeleton from '../../components/Skeleton';
+import { InactiveAccountBanner } from '../../components/InactiveVendorNotice';
 
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -34,7 +35,9 @@ const fileToBase64 = (file) =>
   });
 
 const VendorProfile = () => {
-  const { user, logout, updateUser } = useAuth();
+  // Inactive vendors can open this page to see their account, but not stats or any action that
+  // changes restaurant data (the server refuses those too).
+  const { user, logout, updateUser, isVendorActive } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
@@ -50,12 +53,17 @@ const VendorProfile = () => {
   const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
+    if (!isVendorActive) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     axios
       .get('/api/vendor/stats')
       .then(({ data }) => setStats(data))
-      .catch(() => toast.error('Failed to load stats'))
+      .catch((error) => notifyError(error, 'Failed to load stats'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isVendorActive]);
 
   const handleLogout = () => {
     logout();
@@ -71,27 +79,31 @@ const VendorProfile = () => {
             onClick={toggleTheme}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            {theme === 'dark' ? <FaSun className="text-yellow-500" /> : <FaMoon className="text-gray-700" />}
+            {theme === 'dark' ? <FaSun className="text-red-400" /> : <FaMoon className="text-gray-700" />}
           </button>
         </div>
       </header>
 
       <div className="max-w-3xl lg:max-w-5xl mx-auto w-full px-3 sm:px-4 py-5 sm:py-6 flex-1 flex flex-col gap-5 sm:gap-6">
+        {!isVendorActive && <InactiveAccountBanner />}
+
         {/* Mobile profile card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="lg:hidden relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 sm:p-10"
         >
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="absolute top-4 right-4 sm:top-5 sm:right-5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          >
-            <FaPen className="text-xs" /> Edit
-          </button>
+          {isVendorActive && (
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              <FaPen className="text-xs" /> Edit
+            </button>
+          )}
 
           <div className="flex flex-col items-center text-center gap-1 py-2 sm:py-4">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center text-3xl sm:text-4xl font-bold overflow-hidden ring-4 ring-gray-100 dark:ring-gray-700 mb-3">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white flex items-center justify-center text-3xl sm:text-4xl font-bold overflow-hidden ring-4 ring-gray-100 dark:ring-gray-700 mb-3">
               {user?.avatar ? (
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               ) : (
@@ -110,40 +122,42 @@ const VendorProfile = () => {
           </div>
         </motion.div>
 
-        <div className="lg:hidden grid grid-cols-2 gap-3 sm:gap-4">
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            onClick={() => setShowRevenueModal(true)}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-5 flex items-center gap-3 text-left"
-          >
-            <div className="bg-gray-900 dark:bg-gray-700 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Total Sell</p>
-              <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
-                {loading ? <Skeleton className="h-5 w-14 rounded" /> : `₹${stats.totalRevenue}`}
-              </p>
-            </div>
-          </motion.button>
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            onClick={() => navigate('/vendor/products')}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-5 flex items-center gap-3 text-left"
-          >
-            <div className="bg-gray-600 dark:bg-gray-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
-            <div className="min-w-0">
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Total Products</p>
-              <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
-                {loading ? <Skeleton className="h-5 w-8 rounded" /> : stats.totalProducts}
-              </p>
-            </div>
-          </motion.button>
-        </div>
+        {isVendorActive && (
+          <div className="lg:hidden grid grid-cols-2 gap-3 sm:gap-4">
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              onClick={() => setShowRevenueModal(true)}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-5 flex items-center gap-3 text-left"
+            >
+              <div className="bg-red-500 dark:bg-gray-700 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
+              <div className="min-w-0">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Total Sell</p>
+                <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
+                  {loading ? <Skeleton className="h-5 w-14 rounded" /> : `₹${stats.totalRevenue}`}
+                </p>
+              </div>
+            </motion.button>
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              onClick={() => navigate('/vendor/products')}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow p-4 sm:p-5 flex items-center gap-3 text-left"
+            >
+              <div className="bg-gray-600 dark:bg-gray-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
+              <div className="min-w-0">
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Total Products</p>
+                <p className="text-base sm:text-lg font-bold text-gray-800 dark:text-white">
+                  {loading ? <Skeleton className="h-5 w-8 rounded" /> : stats.totalProducts}
+                </p>
+              </div>
+            </motion.button>
+          </div>
 
-        {!loading && (stats.totalProducts > 0) && (
+        )}
+        {isVendorActive && !loading && stats.totalProducts > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -154,7 +168,7 @@ const VendorProfile = () => {
               Menu Breakdown
             </p>
             <div className="flex flex-wrap gap-2">
-              <span className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+              <span className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                 <FaLeaf className="text-xs" /> Veg: {stats.vegCount}
               </span>
               <span className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400">
@@ -179,12 +193,14 @@ const VendorProfile = () => {
           className="hidden lg:block relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8"
         >
           <div className="absolute top-6 right-6 flex items-center gap-2">
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <FaPen className="text-xs" /> Edit
-            </button>
+            {isVendorActive && (
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                <FaPen className="text-xs" /> Edit
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-red-500 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -194,7 +210,7 @@ const VendorProfile = () => {
           </div>
 
           <div className="flex items-center gap-8">
-            <div className="w-44 h-44 rounded-2xl bg-gradient-to-br from-gray-900 to-black text-white flex items-center justify-center text-5xl font-bold overflow-hidden ring-4 ring-gray-100 dark:ring-gray-700 flex-shrink-0">
+            <div className="w-44 h-44 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 text-white flex items-center justify-center text-5xl font-bold overflow-hidden ring-4 ring-gray-100 dark:ring-gray-700 flex-shrink-0">
               {user?.avatar ? (
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               ) : (
@@ -213,40 +229,44 @@ const VendorProfile = () => {
           </div>
 
           <div className="flex items-center gap-10 mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <button
-              onClick={() => setShowRevenueModal(true)}
-              className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
-            >
-              <div className="bg-gray-900 dark:bg-gray-700 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total Sell</p>
-                <p className="text-lg font-bold text-gray-800 dark:text-white">
-                  {loading ? <Skeleton className="h-5 w-14 rounded" /> : `₹${stats.totalRevenue}`}
-                </p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/vendor/products')}
-              className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
-            >
-              <div className="bg-gray-600 dark:bg-gray-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total Products</p>
-                <p className="text-lg font-bold text-gray-800 dark:text-white">
-                  {loading ? <Skeleton className="h-5 w-8 rounded" /> : stats.totalProducts}
-                </p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate('/vendor/products', { state: { openAdd: true } })}
-              className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
-            >
-              <div className="bg-gradient-to-r from-gray-900 to-black p-3 rounded-xl text-white flex-shrink-0"><FaPlus /></div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Add</p>
-                <p className="text-lg font-bold text-gray-800 dark:text-white">Product</p>
-              </div>
-            </button>
+            {isVendorActive && (
+              <>
+                <button
+                  onClick={() => setShowRevenueModal(true)}
+                  className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="bg-red-500 dark:bg-gray-700 p-3 rounded-xl text-white flex-shrink-0"><FaMoneyBillWave /></div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Sell</p>
+                    <p className="text-lg font-bold text-gray-800 dark:text-white">
+                      {loading ? <Skeleton className="h-5 w-14 rounded" /> : `₹${stats.totalRevenue}`}
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => navigate('/vendor/products')}
+                  className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="bg-gray-600 dark:bg-gray-500 p-3 rounded-xl text-white flex-shrink-0"><FaBoxOpen /></div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Products</p>
+                    <p className="text-lg font-bold text-gray-800 dark:text-white">
+                      {loading ? <Skeleton className="h-5 w-8 rounded" /> : stats.totalProducts}
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => navigate('/vendor/products', { state: { openAdd: true } })}
+                  className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+                >
+                  <div className="bg-gradient-to-r from-red-500 to-red-600 p-3 rounded-xl text-white flex-shrink-0"><FaPlus /></div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Add</p>
+                    <p className="text-lg font-bold text-gray-800 dark:text-white">Product</p>
+                  </div>
+                </button>
+              </>
+            )}
             <button
               onClick={() => setShowPasswordModal(true)}
               className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
@@ -259,13 +279,13 @@ const VendorProfile = () => {
             </button>
           </div>
 
-          {!loading && stats.totalProducts > 0 && (
+          {isVendorActive && !loading && stats.totalProducts > 0 && (
             <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-3">
                 Menu Breakdown
               </p>
               <div className="flex flex-wrap gap-2">
-                <span className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                <span className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                   <FaLeaf className="text-xs" /> Veg: {stats.vegCount}
                 </span>
                 <span className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400">
@@ -284,16 +304,18 @@ const VendorProfile = () => {
           )}
         </motion.div>
 
-        <motion.button
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          onClick={() => navigate('/vendor/products', { state: { openAdd: true } })}
-          className="lg:hidden w-full flex items-center justify-center gap-2 bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all"
-        >
-          <FaPlus /> Add Products
-        </motion.button>
+        {isVendorActive && (
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            onClick={() => navigate('/vendor/products', { state: { openAdd: true } })}
+            className="lg:hidden w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all"
+          >
+            <FaPlus /> Add Products
+          </motion.button>
 
+        )}
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -343,7 +365,7 @@ const ResetPasswordModal = ({ onClose }) => {
       toast.success('Password changed successfully');
       onClose();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to change password');
+      notifyError(error, 'Failed to change password');
     } finally {
       setChanging(false);
     }
@@ -380,7 +402,7 @@ const ResetPasswordModal = ({ onClose }) => {
             onChange={(e) => setPasswords((p) => ({ ...p, currentPassword: e.target.value }))}
             required
             autoFocus
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
           />
           <input
             type="password"
@@ -389,12 +411,12 @@ const ResetPasswordModal = ({ onClose }) => {
             onChange={(e) => setPasswords((p) => ({ ...p, newPassword: e.target.value }))}
             required
             minLength={6}
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
           />
           <button
             type="submit"
             disabled={changing}
-            className="w-full bg-gray-800 dark:bg-gray-700 text-white font-semibold py-2.5 rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
+            className="w-full bg-red-500 dark:bg-gray-700 text-white font-semibold py-2.5 rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
           >
             {changing ? <FaSpinner className="animate-spin mx-auto" /> : 'Update Password'}
           </button>
@@ -434,7 +456,7 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
       toast.success('Profile updated');
       onSaved(data.user);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update profile');
+      notifyError(error, 'Failed to update profile');
     } finally {
       setSaving(false);
     }
@@ -471,7 +493,7 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
                   <FaCamera className="text-2xl text-gray-400" />
                 )}
               </div>
-              <span className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 flex items-center justify-center text-xs">
+              <span className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-red-500 dark:bg-red-500 text-white dark:text-white flex items-center justify-center text-xs">
                 <FaCamera />
               </span>
               <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
@@ -486,7 +508,7 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
               value={form.name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
             />
           </div>
 
@@ -498,7 +520,7 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
               value={form.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
             />
           </div>
 
@@ -511,14 +533,14 @@ const EditProfileModal = ({ user, onClose, onSaved }) => {
               value={form.restaurantName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
             />
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? <FaSpinner className="animate-spin" /> : 'Save Changes'}
           </button>
@@ -545,7 +567,7 @@ const RevenueModal = ({ onClose }) => {
     axios
       .get('/api/vendor/revenue', { params: { period, ...(period === 'date' ? { date: customDate } : {}) } })
       .then(({ data }) => setSummary(data))
-      .catch(() => toast.error('Failed to load revenue'))
+      .catch((error) => notifyError(error, 'Failed to load revenue'))
       .finally(() => setLoading(false));
   }, [period, customDate]);
 
@@ -584,7 +606,7 @@ const RevenueModal = ({ onClose }) => {
                 onClick={() => setPeriod(opt.key)}
                 className={`py-2 rounded-xl text-xs sm:text-sm font-semibold transition-colors ${
                   period === opt.key
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                    ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
@@ -599,7 +621,7 @@ const RevenueModal = ({ onClose }) => {
               value={customDate}
               max={todayStr}
               onChange={(e) => setCustomDate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
             />
           )}
 

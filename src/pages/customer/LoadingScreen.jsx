@@ -113,7 +113,7 @@ const LoadingScreen = () => {
               </AnimatePresence>
               
               {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-red-500/20 via-transparent to-transparent" />
               
               {/* Image Badge */}
               <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
@@ -133,15 +133,15 @@ const LoadingScreen = () => {
               transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
               className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-gray-900 to-black rounded-full animate-pulse" />
-              <div className="absolute inset-1 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center">
-                <span className="text-2xl sm:text-3xl">🍽️</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 rounded-full animate-pulse" />
+              <div className="absolute inset-1 rounded-full overflow-hidden">
+                <img src="/applogo.jpeg" alt="HiaQr" className="w-full h-full object-cover" />
               </div>
             </motion.div>
 
             {/* Restaurant Name */}
-            <h1 className="text-2xl sm:text-3xl font-display font-bold bg-gradient-to-r from-gray-900 to-black bg-clip-text text-transparent mb-1">
-              Smart QR Food
+            <h1 className="text-2xl sm:text-3xl font-display font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent mb-1">
+              HiaQr
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm">
               Loading your delicious menu...
@@ -175,7 +175,7 @@ const LoadingScreen = () => {
             {/* Progress Bar */}
             <div className="w-full max-w-xs h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mx-auto">
               <motion.div
-                className="h-full bg-gradient-to-r from-gray-900 to-black rounded-full"
+                className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full"
                 initial={{ width: '0%' }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.3 }}
@@ -197,7 +197,7 @@ const LoadingScreen = () => {
               <motion.div
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                className="w-1.5 h-1.5 bg-gray-900 dark:bg-white rounded-full"
+                className="w-1.5 h-1.5 bg-red-500 dark:bg-red-500 rounded-full"
               />
               <motion.div
                 animate={{ y: [0, -4, 0] }}
@@ -207,7 +207,7 @@ const LoadingScreen = () => {
               <motion.div
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                className="w-1.5 h-1.5 bg-gray-900 dark:bg-white rounded-full"
+                className="w-1.5 h-1.5 bg-red-500 dark:bg-red-500 rounded-full"
               />
             </div>
           </div>

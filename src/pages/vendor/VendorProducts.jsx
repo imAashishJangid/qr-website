@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus, FaEdit, FaTrash, FaSpinner, FaLeaf, FaBoxOpen, FaExclamationTriangle } from 'react-icons/fa';
-import axios from '../../lib/api';
+import axios, { notifyError } from '../../lib/api';
 import toast from 'react-hot-toast';
 import ProductFormModal from '../../components/ProductFormModal';
 import Skeleton from '../../components/Skeleton';
+import ProductImage from '../../components/ProductImage';
 
 const VendorProducts = () => {
   const location = useLocation();
@@ -29,7 +30,7 @@ const VendorProducts = () => {
       setProducts(productsRes.data);
       setCategories(categoriesRes.data);
     } catch (error) {
-      toast.error('Failed to load products');
+      notifyError(error, 'Failed to load products');
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ const VendorProducts = () => {
       toast.success('Product deleted');
       setDeleteTarget(null);
     } catch (error) {
-      toast.error('Failed to delete product');
+      notifyError(error, 'Failed to delete product');
     } finally {
       setDeleting(false);
     }
@@ -94,7 +95,7 @@ const VendorProducts = () => {
           </div>
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 rounded-xl font-semibold text-sm sm:text-base hover:shadow-lg transition-all flex-shrink-0"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white dark:text-white rounded-xl font-semibold text-sm sm:text-base hover:shadow-lg transition-all flex-shrink-0"
           >
             <FaPlus /> Add Product
           </button>
@@ -109,7 +110,7 @@ const VendorProducts = () => {
           </div>
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 rounded-xl font-semibold hover:shadow-lg transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white dark:text-white rounded-xl font-semibold hover:shadow-lg transition-all"
           >
             <FaPlus /> Add Product
           </button>
@@ -126,7 +127,7 @@ const VendorProducts = () => {
               onClick={() => setVegFilter(key)}
               className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                 vegFilter === key
-                  ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                  ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
@@ -139,7 +140,7 @@ const VendorProducts = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-white dark:bg-gray-800 rounded-none shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
-                <Skeleton className="w-full pt-[110%]" />
+                <Skeleton className="w-full aspect-[4/3]" />
                 <div className="p-4 space-y-2">
                   <Skeleton className="h-4 w-3/4 rounded" />
                   <Skeleton className="h-5 w-1/2 rounded" />
@@ -174,12 +175,8 @@ const VendorProducts = () => {
                   exit={{ opacity: 0, scale: 0.9 }}
                   className="bg-white dark:bg-gray-800 rounded-none shadow-lg hover:shadow-xl transition-shadow overflow-hidden border border-gray-100 dark:border-gray-700"
                 >
-                  <div className="relative w-full pt-[110%] overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800">
-                    <img
-                      src={product.image || 'https://placehold.co/400x300/E5E7EB/111827?text=Food'}
-                      alt={product.name}
-                      className="absolute top-0 left-0 w-full h-full object-cover"
-                    />
+                  <div className="relative w-full">
+                    <ProductImage src={product.image} alt={product.name} className="w-full aspect-[4/3]" />
                     {product.categoryId?.name && (
                       <span className="absolute top-2 left-2 flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white/90 dark:bg-gray-900/80 backdrop-blur px-2.5 py-1 rounded-none shadow-sm">
                         {product.categoryId.icon} {product.categoryId.name}

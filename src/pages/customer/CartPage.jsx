@@ -5,14 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../context/CartContext';
 import axios from '../../lib/api';
 import { getCustomerId } from '../../lib/customerId';
+import { getScanSession } from '../../lib/scanSession';
 import { loadCustomerDetails, saveCustomerDetails, isValidPhone } from '../../lib/customerDetails';
 import { FaTrash, FaArrowLeft, FaCheck, FaUser, FaPhoneAlt } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import Confetti from 'react-confetti';
-
-// Must match GST_RATE in the backend's orderController — the server recalculates
-// the bill itself, this is only so the customer sees the same numbers up front.
-const GST_RATE = 0.05;
+import ProductImage from '../../components/ProductImage';
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -22,9 +20,8 @@ const CartPage = () => {
   const [customer, setCustomer] = useState(loadCustomerDetails);
   const [phoneTouched, setPhoneTouched] = useState(false);
 
-  const subtotal = getTotal();
-  const gst = Number((subtotal * GST_RATE).toFixed(2));
-  const total = Number((subtotal + gst).toFixed(2));
+  // No GST: the bill is just the items (the server calculates the same total itself).
+  const total = Number(getTotal().toFixed(2));
 
   const nameValid = customer.name.trim().length > 0;
   const phoneValid = isValidPhone(customer.phone);
@@ -36,8 +33,7 @@ const CartPage = () => {
     setIsPlacingOrder(true);
     try {
       const orderData = {
-        vendorId: localStorage.getItem('vendorId'),
-        tableId: localStorage.getItem('tableId'),
+        ...getScanSession(),
         customerId: getCustomerId(),
         customerName: customer.name.trim(),
         customerPhone: customer.phone.trim(),
@@ -116,7 +112,7 @@ const CartPage = () => {
               {!showSuccess && (
                 <button
                   onClick={() => navigate(-1)}
-                  className="mt-6 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-3 rounded-full hover:bg-gray-700 dark:hover:bg-gray-200 hover:shadow-lg transition-all"
+                  className="mt-6 bg-red-500 dark:bg-red-500 text-white dark:text-white px-8 py-3 rounded-full hover:bg-red-600 dark:hover:bg-red-600 hover:shadow-lg transition-all"
                 >
                   Browse Menu
                 </button>
@@ -136,10 +132,10 @@ const CartPage = () => {
                       className="bg-white dark:bg-gray-800 rounded-2xl p-3 sm:p-4 shadow-md flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
                     >
                       <div className="flex items-center gap-3 sm:gap-4 sm:flex-1 min-w-0">
-                        <img
-                          src={item.image || 'https://placehold.co/80/E5E7EB/111827?text=Food'}
+                        <ProductImage
+                          src={item.image}
                           alt={item.name}
-                          className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl object-cover flex-shrink-0"
+                          className="w-14 h-14 sm:w-20 sm:h-20 rounded-xl flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-white truncate">
@@ -250,14 +246,6 @@ const CartPage = () => {
                   Bill Details
                 </h2>
                 <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                  <div className="flex justify-between">
-                    <span>Item total</span>
-                    <span>₹{subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST (5%)</span>
-                    <span>₹{gst.toFixed(2)}</span>
-                  </div>
                   <div className="flex justify-between pt-3 mt-1 border-t border-dashed border-gray-200 dark:border-gray-600 text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                     <span>To Pay</span>
                     <span>₹{total.toFixed(2)}</span>
@@ -267,7 +255,7 @@ const CartPage = () => {
                 <button
                   onClick={handlePlaceOrder}
                   disabled={!canOrder}
-                  className="w-full mt-6 bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-3 rounded-xl font-semibold hover:bg-gray-700 dark:hover:bg-gray-200 hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-900 dark:disabled:hover:bg-white flex items-center justify-center gap-2"
+                  className="w-full mt-6 bg-red-500 dark:bg-red-500 text-white dark:text-white py-3 rounded-xl font-semibold hover:bg-red-600 dark:hover:bg-red-600 hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-900 dark:disabled:hover:bg-white flex items-center justify-center gap-2"
                 >
                   {isPlacingOrder ? (
                     <>

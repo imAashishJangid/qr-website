@@ -41,8 +41,8 @@ const VendorLogin = () => {
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full"
       >
         <div className="text-center mb-6 sm:mb-8">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 flex items-center justify-center text-3xl sm:text-4xl bg-gradient-to-r from-gray-900 to-black rounded-2xl shadow-lg shadow-black/20">
-            🍽️
+          <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 overflow-hidden rounded-2xl shadow-lg shadow-red-500/30">
+            <img src="/applogo.jpeg" alt="HiaQr" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-800 dark:text-white">
             Vendor Login
@@ -64,7 +64,7 @@ const VendorLogin = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 placeholder="you@restaurant.com"
                 required
               />
@@ -91,7 +91,7 @@ const VendorLogin = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 placeholder="••••••••"
                 required
               />
@@ -101,7 +101,7 @@ const VendorLogin = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? <FaSpinner className="animate-spin mx-auto" /> : 'Login to Dashboard'}
           </button>
@@ -225,13 +225,13 @@ const ForgotPasswordModal = ({ onClose }) => {
                   required
                   autoFocus
                   placeholder="you@restaurant.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 />
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center"
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center"
               >
                 {submitting ? <FaSpinner className="animate-spin" /> : 'Send OTP'}
               </button>
@@ -254,13 +254,13 @@ const ForgotPasswordModal = ({ onClose }) => {
                   required
                   autoFocus
                   placeholder="123456"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white tracking-widest focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white tracking-widest focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 />
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center"
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center"
               >
                 {submitting ? <FaSpinner className="animate-spin" /> : 'Verify OTP'}
               </button>
@@ -293,13 +293,13 @@ const ForgotPasswordModal = ({ onClose }) => {
                   minLength={6}
                   autoFocus
                   placeholder="New password"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 />
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-gradient-to-r from-gray-900 to-black text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center"
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center"
               >
                 {submitting ? <FaSpinner className="animate-spin" /> : 'Update Password'}
               </button>

@@ -73,7 +73,7 @@ const Plans = () => {
               transition={{ delay: i * 0.08 }}
               className={`relative rounded-2xl p-6 flex flex-col ${
                 plan.highlight
-                  ? 'bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-2xl shadow-red-500/30 scale-105'
+                  ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-2xl shadow-red-500/30 scale-105'
                   : 'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white shadow-md'
               }`}
             >
@@ -100,7 +100,7 @@ const Plans = () => {
                 className={`mt-6 w-full py-3 rounded-xl font-semibold transition-all ${
                   plan.highlight
                     ? 'bg-white text-red-500 hover:shadow-lg'
-                    : 'bg-gradient-to-r from-red-500 to-orange-500 text-white hover:shadow-lg'
+                    : 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-lg'
                 }`}
               >
                 Get This Plan
@@ -112,7 +112,7 @@ const Plans = () => {
         <div className="mt-14 max-w-2xl mx-auto grid sm:grid-cols-2 gap-3">
           {INCLUDED.map((item) => (
             <div key={item} className="flex items-center gap-3 text-gray-600 dark:text-gray-300 text-sm">
-              <span className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30 text-green-600">
+              <span className="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 text-red-500">
                 <FaCheck className="text-xs" />
               </span>
               {item}

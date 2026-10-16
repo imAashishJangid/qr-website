@@ -6,10 +6,11 @@ import axios from '../lib/api';
 import { getCustomerId } from '../lib/customerId';
 import { loadCustomerDetails, saveCustomerDetails, isValidPhone } from '../lib/customerDetails';
 import toast from 'react-hot-toast';
+import ProductImage from './ProductImage';
 
 const ESTIMATED_MINUTES = '15-20';
 
-const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
+const QuickOrderModal = ({ item, vendorId, tableId, qrToken, onClose }) => {
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
@@ -33,6 +34,7 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
       const { data } = await axios.post('/api/orders', {
         vendorId,
         tableId,
+        qrToken,
         customerId: getCustomerId(),
         customerName: customer.name.trim(),
         customerPhone: customer.phone.trim(),
@@ -77,10 +79,11 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
 
           <div className="p-4 sm:p-6 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-4">
             <div className="flex items-center gap-4 lg:col-span-2">
-              <img
-                src={item.image || 'https://placehold.co/80/E5E7EB/111827?text=Food'}
+              <ProductImage
+                src={item.image}
                 alt={item.name}
-                className="w-16 h-16 rounded-xl lg:rounded-none object-cover flex-shrink-0"
+                lazy={false}
+                className="w-16 h-16 rounded-xl lg:rounded-none flex-shrink-0"
               />
               <div className="min-w-0">
                 <h3 className="font-semibold text-gray-800 dark:text-white truncate">{item.name}</h3>
@@ -133,7 +136,7 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
                 value={customer.name}
                 onChange={(e) => setCustomer((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="Your name"
-                className="w-full px-4 py-2.5 rounded-xl lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                className="w-full px-4 py-2.5 rounded-xl lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
               />
             </div>
 
@@ -169,7 +172,7 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
                 onChange={(e) => setNote(e.target.value)}
                 rows={2}
                 placeholder="e.g. less spicy, no onions..."
-                className="w-full px-4 py-2.5 rounded-xl lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                className="w-full px-4 py-2.5 rounded-xl lg:rounded-none border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
               />
             </div>
 
@@ -188,7 +191,7 @@ const QuickOrderModal = ({ item, vendorId, tableId, onClose }) => {
             <button
               onClick={handleConfirm}
               disabled={!canOrder}
-              className="w-full lg:col-span-2 bg-gradient-to-r from-gray-900 to-black dark:from-gray-100 dark:to-white text-white dark:text-gray-900 font-semibold py-3 rounded-xl lg:rounded-none hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full lg:col-span-2 bg-gradient-to-r from-red-500 to-red-600 text-white dark:text-white font-semibold py-3 rounded-xl lg:rounded-none hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {placing ? (
                 <>

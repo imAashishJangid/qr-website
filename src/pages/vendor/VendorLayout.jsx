@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import axios from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useSocket } from '../../context/SocketContext';
-import { FaChartPie, FaUtensils, FaClipboardList, FaUserCircle, FaMoon, FaSun } from 'react-icons/fa';
+import { FaChartPie, FaUtensils, FaClipboardList, FaUserCircle, FaMoon, FaSun, FaWhatsapp } from 'react-icons/fa';
 import Skeleton from '../../components/Skeleton';
+import InactiveVendorNotice from '../../components/InactiveVendorNotice';
+import PlanExpiryReminder from '../../components/PlanExpiryReminder';
+import { openAdminWhatsApp } from '../../lib/contact';
 
 const tabs = [
   { to: '/vendor/dashboard', label: 'Dashboard', icon: FaChartPie },
@@ -15,10 +18,13 @@ const tabs = [
 ];
 
 const VendorLayout = () => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { isAuthenticated, isVendorActive, loading, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { socket } = useSocket();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // Inactive vendors may only open their profile; every other screen shows the locked notice.
+  const canViewPage = isVendorActive || pathname.startsWith('/vendor/profile');
   // Ids of orders still waiting for the vendor to accept or decline. The Orders
   // nav dot shows while this is non-empty and disappears once nothing is pending.
   const [pendingOrderIds, setPendingOrderIds] = useState(() => new Set());
@@ -30,18 +36,22 @@ const VendorLayout = () => {
     }
   }, [loading, isAuthenticated, navigate]);
 
+  // Inactive vendors get no order data or live updates; the badge resets until reactivation.
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !isVendorActive) {
+      setPendingOrderIds(new Set());
+      return;
+    }
     axios.get('/api/vendor/orders')
       .then(({ data }) => {
         setPendingOrderIds(new Set(data.filter((o) => o.status === 'pending').map((o) => o._id)));
       })
       .catch(() => {});
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isVendorActive]);
 
   useEffect(() => {
-    if (!socket || !user?.id) return;
-    socket.emit('join-vendor', user.id);
+    if (!socket || !user?.id || !isVendorActive) return;
+    socket.emit('join-vendor', localStorage.getItem('vendorToken'));
 
     const trackOrder = (order) => {
       setPendingOrderIds((prev) => {
@@ -60,7 +70,7 @@ const VendorLayout = () => {
       socket.off('newOrder', trackOrder);
       socket.off('orderUpdated', trackOrder);
     };
-  }, [socket, user?.id]);
+  }, [socket, user?.id, isVendorActive]);
 
   if (loading) {
     return (
@@ -100,10 +110,10 @@ const VendorLayout = () => {
             onClick={() => navigate('/vendor/dashboard')}
             className="flex items-center gap-2.5"
           >
-            <div className="w-9 h-9 flex items-center justify-center text-lg bg-gradient-to-r from-gray-800 to-black dark:from-gray-100 dark:to-white rounded-xl shadow-md shadow-black/20">
-              🍽️
+            <div className="w-9 h-9 overflow-hidden rounded-xl shadow-md shadow-red-500/30">
+              <img src="/applogo.jpeg" alt="HiaQr" className="w-full h-full object-cover" />
             </div>
-            <span className="font-display font-bold text-gray-800 dark:text-white">Smart QR Food</span>
+            <span className="font-display font-bold text-gray-800 dark:text-white">HiaQr</span>
           </button>
           <div className="flex items-center gap-1">
             {tabs.map(({ to, label, icon: Icon }) => (
@@ -121,27 +131,36 @@ const VendorLayout = () => {
                 <Icon className="text-base" />
                 {label}
                 {to === '/vendor/orders' && hasNewOrder && (
-                  <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-gray-900 dark:bg-white" />
+                  <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-red-500 dark:bg-red-500" />
                 )}
               </NavLink>
             ))}
             <button
+              type="button"
+              onClick={() => openAdminWhatsApp(user)}
+              title="Chat with admin on WhatsApp"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
+              <FaWhatsapp className="text-base text-green-500" />
+              WhatsApp
+            </button>
+            <button
               onClick={toggleTheme}
               className="ml-2 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
-              {theme === 'dark' ? <FaSun className="text-yellow-500" /> : <FaMoon className="text-gray-700" />}
+              {theme === 'dark' ? <FaSun className="text-red-400" /> : <FaMoon className="text-gray-700" />}
             </button>
           </div>
         </div>
       </nav>
 
       <div className="flex-1 flex flex-col">
-        <Outlet />
+        {canViewPage ? <Outlet /> : <InactiveVendorNotice />}
       </div>
 
       {/* Mobile bottom nav */}
       <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-700 shadow-2xl lg:hidden">
-        <div className="max-w-lg mx-auto grid grid-cols-4">
+        <div className="max-w-lg mx-auto grid grid-cols-5">
           {tabs.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -157,14 +176,25 @@ const VendorLayout = () => {
               <span className="relative">
                 <Icon className="text-lg" />
                 {to === '/vendor/orders' && hasNewOrder && (
-                  <span className="absolute -top-0.5 -right-1.5 w-2 h-2 rounded-full bg-gray-900 dark:bg-white" />
+                  <span className="absolute -top-0.5 -right-1.5 w-2 h-2 rounded-full bg-red-500 dark:bg-red-500" />
                 )}
               </span>
               {label}
             </NavLink>
           ))}
+          <button
+            type="button"
+            onClick={() => openAdminWhatsApp(user)}
+            aria-label="Chat with admin on WhatsApp"
+            className="flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+          >
+            <FaWhatsapp className="text-lg text-green-500" />
+            WhatsApp
+          </button>
         </div>
       </nav>
+
+      {isVendorActive && <PlanExpiryReminder />}
     </div>
   );
 };

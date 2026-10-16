@@ -8,10 +8,10 @@ const Hero = () => {
   return (
     <section
       id="home"
-      className="relative pt-32 pb-20 sm:pt-40 sm:pb-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-br from-red-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800"
+      className="relative pt-32 pb-20 sm:pt-40 sm:pb-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-br from-red-50 via-white to-red-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800"
     >
       <div className="absolute -top-24 -right-24 w-72 h-72 bg-red-300/30 rounded-full blur-3xl animate-pulse-slow" />
-      <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-orange-300/30 rounded-full blur-3xl animate-pulse-slow" />
+      <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-red-300/30 rounded-full blur-3xl animate-pulse-slow" />
 
       <div className="relative max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
         <motion.div
@@ -29,14 +29,14 @@ const Hero = () => {
           </h1>
 
           <p className="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-xl">
-            Smart QR Food gives your restaurant or cafe a digital menu customers can scan and order
+            HiaQr gives your restaurant or cafe a digital menu customers can scan and order
             from instantly — while you manage every order live from a dashboard or your own Android app.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-4">
             <button
               onClick={() => scrollTo('plans')}
-              className="bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold px-7 py-3.5 rounded-xl hover:shadow-lg hover:shadow-red-500/30 transition-all"
+              className="bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold px-7 py-3.5 rounded-xl hover:shadow-lg hover:shadow-red-500/30 transition-all"
             >
               Start Free Trial
             </button>
@@ -49,8 +49,8 @@ const Hero = () => {
           </div>
 
           <div className="mt-10 flex flex-wrap gap-6 text-sm text-gray-500 dark:text-gray-400">
-            <span className="flex items-center gap-2"><FaBolt className="text-orange-500" /> Live order updates</span>
-            <span className="flex items-center gap-2"><FaAndroid className="text-green-600" /> Android app included</span>
+            <span className="flex items-center gap-2"><FaBolt className="text-red-500" /> Live order updates</span>
+            <span className="flex items-center gap-2"><FaAndroid className="text-red-500" /> Android app included</span>
             <span className="flex items-center gap-2"><FaQrcode className="text-red-500" /> Unlimited table QR codes</span>
           </div>
         </motion.div>

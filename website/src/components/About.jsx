@@ -36,7 +36,7 @@ const About = () => (
         className="text-center max-w-2xl mx-auto mb-16"
       >
         <h2 className="text-3xl sm:text-4xl font-display font-bold text-gray-800 dark:text-white">
-          How <span className="text-gradient">Smart QR Food</span> works
+          How <span className="text-gradient">HiaQr</span> works
         </h2>
         <p className="mt-4 text-gray-600 dark:text-gray-300">
           A complete contactless ordering system for restaurants, cafes and food courts — from the
@@ -54,7 +54,7 @@ const About = () => (
             transition={{ delay: i * 0.1 }}
             className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all"
           >
-            <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-orange-500 text-white text-xl mb-4">
+            <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white text-xl mb-4">
               <step.icon />
             </div>
             <h3 className="font-bold text-gray-800 dark:text-white mb-2">{step.title}</h3>

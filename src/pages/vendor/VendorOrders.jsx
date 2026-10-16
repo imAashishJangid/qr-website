@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { FaCheck, FaCheckDouble, FaClock, FaUtensils, FaBell, FaSpinner, FaInbox, FaCommentDots } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { playNotificationChime } from '../../lib/notificationSound';
-import axios from '../../lib/api';
+import axios, { notifyError } from '../../lib/api';
 import Skeleton from '../../components/Skeleton';
 
 // Order flow tabs: New → Preparing → Ready → Completed. Declined orders leave the board.
@@ -40,7 +40,7 @@ const VendorOrders = () => {
         const { data } = await axios.get('/api/vendor/orders');
         setOrders(data);
       } catch (error) {
-        toast.error('Failed to load orders');
+        notifyError(error, 'Failed to load orders');
       } finally {
         setLoading(false);
       }
@@ -50,7 +50,7 @@ const VendorOrders = () => {
 
     if (!socket || !user?.id) return;
 
-    socket.emit('join-vendor', user.id);
+    socket.emit('join-vendor', localStorage.getItem('vendorToken'));
 
     const handleNewOrder = (newOrder) => {
       setOrders((prev) => [newOrder, ...prev]);
@@ -85,7 +85,7 @@ const VendorOrders = () => {
       setOrders((prev) => prev.map((o) => (o._id === orderId ? data : o)));
       toast.success(status === 'preparing' ? 'Order accepted!' : `Order marked as ${status}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update order status');
+      notifyError(error, 'Failed to update order status');
     } finally {
       setUpdating(null);
     }
@@ -116,7 +116,7 @@ const VendorOrders = () => {
       setDeclineReason('');
       setCustomDeclineReason('');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to decline order');
+      notifyError(error, 'Failed to decline order');
     } finally {
       setUpdating(null);
     }
@@ -147,7 +147,7 @@ const VendorOrders = () => {
           <div className="relative flex-shrink-0">
             <FaBell className="text-xl sm:text-2xl text-gray-700 dark:text-white" />
             {orders.filter((o) => o.status === 'pending').length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 bg-red-500 dark:bg-red-500 text-white dark:text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
                 {orders.filter((o) => o.status === 'pending').length}
               </span>
             )}
@@ -175,7 +175,7 @@ const VendorOrders = () => {
                   onClick={() => setSelectedTab(tab)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
                     selectedTab === tab
-                      ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                      ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -195,7 +195,7 @@ const VendorOrders = () => {
           <div className="relative flex-shrink-0">
             <FaBell className="text-2xl text-gray-700 dark:text-white" />
             {orders.filter((o) => o.status === 'pending').length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 bg-red-500 dark:bg-red-500 text-white dark:text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
                 {orders.filter((o) => o.status === 'pending').length}
               </span>
             )}
@@ -212,7 +212,7 @@ const VendorOrders = () => {
                 onClick={() => setSelectedTab(tab)}
                 className={`min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 px-1 py-1.5 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-semibold transition-all ${
                   selectedTab === tab
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg shadow-black/20'
+                    ? 'bg-red-500 dark:bg-red-500 text-white dark:text-white shadow-lg shadow-red-500/30'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
@@ -290,7 +290,7 @@ const VendorOrders = () => {
                     </div>
 
                     {order.note && (
-                      <div className="mt-3 flex items-start gap-2 text-sm bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-gray-900 dark:border-white rounded-lg lg:rounded-none p-2.5">
+                      <div className="mt-3 flex items-start gap-2 text-sm bg-gray-100 dark:bg-gray-700/60 text-gray-700 dark:text-gray-200 border-l-2 border-red-500 dark:border-red-500 rounded-lg lg:rounded-none p-2.5">
                         <FaCommentDots className="mt-0.5 flex-shrink-0" />
                         <span>{order.note}</span>
                       </div>
@@ -316,7 +316,7 @@ const VendorOrders = () => {
                           <button
                             onClick={() => updateOrderStatus(order._id, 'preparing')}
                             disabled={updating === order._id}
-                            className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
+                            className="flex-1 bg-red-500 dark:bg-red-500 text-white dark:text-white py-2.5 lg:py-3.5 rounded-xl lg:rounded-none hover:bg-red-600 dark:hover:bg-red-600 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
                           >
                             {updating === order._id ? <FaSpinner className="animate-spin mx-auto" /> : 'Accept & Prepare'}
                           </button>
@@ -326,7 +326,7 @@ const VendorOrders = () => {
                         <button
                           onClick={() => updateOrderStatus(order._id, 'ready')}
                           disabled={updating === order._id}
-                          className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-2.5 lg:py-3.5 rounded-xl lg:rounded-none hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
+                          className="flex-1 bg-red-500 dark:bg-red-500 text-white dark:text-white py-2.5 lg:py-3.5 rounded-xl lg:rounded-none hover:bg-red-600 dark:hover:bg-red-600 transition-colors text-sm lg:text-base font-semibold disabled:opacity-50"
                         >
                           {updating === order._id ? <FaSpinner className="animate-spin mx-auto" /> : 'Ready'}
                         </button>
@@ -375,7 +375,7 @@ const VendorOrders = () => {
                     key={reason}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer text-sm transition-colors ${
                       declineReason === reason
-                        ? 'border-gray-900 dark:border-white bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold'
+                        ? 'border-red-500 dark:border-red-500 bg-gray-100 dark:bg-gray-700 text-red-500 dark:text-white font-semibold'
                         : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
                     }`}
                   >
@@ -385,7 +385,7 @@ const VendorOrders = () => {
                       value={reason}
                       checked={declineReason === reason}
                       onChange={() => setDeclineReason(reason)}
-                      className="accent-gray-900 dark:accent-white"
+                      className="accent-red-500 dark:accent-white"
                     />
                     {reason}
                   </label>
@@ -398,7 +398,7 @@ const VendorOrders = () => {
                   onChange={(e) => setCustomDeclineReason(e.target.value)}
                   placeholder="Type the reason for the customer"
                   rows={2}
-                  className="mt-2 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+                  className="mt-2 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-500"
                 />
               )}
               <div className="mt-4 flex gap-2">
@@ -411,7 +411,7 @@ const VendorOrders = () => {
                 <button
                   onClick={confirmDecline}
                   disabled={updating === decliningOrder || !finalDeclineReason}
-                  className="flex-1 py-2.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 dark:bg-red-500 text-white dark:text-white font-semibold hover:bg-red-600 dark:hover:bg-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {updating === decliningOrder ? <FaSpinner className="animate-spin mx-auto" /> : 'Confirm Decline'}
                 </button>

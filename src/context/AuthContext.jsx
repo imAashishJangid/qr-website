@@ -1,6 +1,6 @@
 // frontend/src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from '../lib/api';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import axios, { VENDOR_INACTIVE_EVENT } from '../lib/api';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -17,30 +17,61 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('vendorToken'));
+  // Token whose user came straight from login/signup, so it needn't be re-verified right away.
+  const freshToken = useRef(null);
+  const userRef = useRef(user);
+  userRef.current = user;
+  // When the user was last loaded from the server, and the verify request currently in flight.
+  const verifyState = useRef({ at: 0, request: null });
+
+  const clearSession = useCallback(() => {
+    localStorage.removeItem('vendorToken');
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  const markVerified = (verifiedUser) => {
+    verifyState.current.at = Date.now();
+    setUser(verifiedUser);
+  };
+
+  // Re-reads the vendor (active status, plan expiry) from the server. Concurrent callers share one
+  // request, and `maxAgeMs` reuses data loaded that recently. Only a rejected token ends the
+  // session; a network error keeps the vendor signed in with what we already know.
+  const refreshUser = useCallback(async ({ maxAgeMs = 0 } = {}) => {
+    const state = verifyState.current;
+    if (state.request) return state.request;
+    if (maxAgeMs && Date.now() - state.at < maxAgeMs) return userRef.current;
+
+    state.request = (async () => {
+      try {
+        const { data } = await axios.get('/api/vendor/verify');
+        markVerified(data.user);
+        return data.user;
+      } catch (error) {
+        if (error.response?.status === 401) clearSession();
+        return null;
+      } finally {
+        state.request = null;
+      }
+    })();
+    return state.request;
+  }, [clearSession]);
 
   useEffect(() => {
-    if (token) {
-      verifyToken();
-    } else {
+    if (!token || token === freshToken.current) {
       setLoading(false);
+      return;
     }
-  }, [token]);
+    refreshUser().finally(() => setLoading(false));
+  }, [token, refreshUser]);
 
-  const verifyToken = async () => {
-    try {
-      const response = await axios.get('/api/vendor/verify', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUser(response.data.user);
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      localStorage.removeItem('vendorToken');
-      setToken(null);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Any API call can report that the admin deactivated this vendor mid-session.
+  useEffect(() => {
+    const markInactive = () => setUser((prev) => (prev && prev.isActive ? { ...prev, isActive: false } : prev));
+    window.addEventListener(VENDOR_INACTIVE_EVENT, markInactive);
+    return () => window.removeEventListener(VENDOR_INACTIVE_EVENT, markInactive);
+  }, []);
 
   const login = async (email, password) => {
     try {
@@ -48,8 +79,9 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data;
 
       localStorage.setItem('vendorToken', token);
+      freshToken.current = token;
       setToken(token);
-      setUser(user);
+      markVerified(user);
       toast.success(`Welcome back, ${user.name}! 🎉`);
       return { success: true };
     } catch (error) {
@@ -64,8 +96,9 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data;
 
       localStorage.setItem('vendorToken', token);
+      freshToken.current = token;
       setToken(token);
-      setUser(user);
+      markVerified(user);
       toast.success(`Welcome, ${user.name}! Your vendor account is ready 🎉`);
       return { success: true };
     } catch (error) {
@@ -75,9 +108,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('vendorToken');
-    setToken(null);
-    setUser(null);
+    clearSession();
     toast.success('Logged out successfully');
   };
 
@@ -93,7 +124,9 @@ export const AuthProvider = ({ children }) => {
     signup,
     logout,
     updateUser,
-    isAuthenticated: !!user && !!token
+    refreshUser,
+    isAuthenticated: !!user && !!token,
+    isVendorActive: !!user?.isActive,
   };
 
   return (

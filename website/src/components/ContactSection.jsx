@@ -40,7 +40,7 @@ const ContactSection = () => {
             Get in <span className="text-gradient">touch</span>
           </h2>
           <p className="mt-4 text-gray-600 dark:text-gray-300 max-w-md">
-            Want to bring Smart QR Food to your restaurant or cafe? Send us your details and
+            Want to bring HiaQr to your restaurant or cafe? Send us your details and
             we'll reach out to get you set up.
           </p>
 
@@ -126,7 +126,7 @@ const ContactSection = () => {
           <button
             type="submit"
             disabled={sending}
-            className="w-full bg-gradient-to-r from-red-500 to-orange-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {sending ? (
               <>

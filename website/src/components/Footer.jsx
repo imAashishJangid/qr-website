@@ -43,7 +43,7 @@ const Footer = () => (
     </div>
 
     <div className="max-w-6xl mx-auto border-t border-gray-800 mt-10 pt-6 text-center text-xs text-gray-500">
-      © {new Date().getFullYear()} Smart QR Food. All rights reserved.
+      © {new Date().getFullYear()} HiaQr. All rights reserved.
     </div>
   </footer>
 );
